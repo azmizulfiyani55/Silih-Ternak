@@ -1,0 +1,1886 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SILIH-TERNAK — Dinas Peternakan Provinsi NTT</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg: #f8fafc;
+    --bg-2: #ffffff;
+    --surface: #ffffff;
+    --surface-2: #fff7ed;
+    --border: #fed7aa;
+    --border-soft: #ffedd5;
+    --text: #1c1917;
+    --muted: #78716c;
+    --muted-2: #a8a29e;
+    --primary: #ea580c;
+    --primary-2: #f97316;
+    --accent: #0284c7;
+    --success: #16a34a;
+    --danger: #dc2626;
+    --warning: #ca8a04;
+    --violet: #7c3aed;
+  }
+  * { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    background-image:
+      radial-gradient(ellipse 1200px 600px at 80% -10%, rgba(249,115,22,0.1), transparent 60%),
+      radial-gradient(ellipse 900px 500px at 0% 100%, rgba(14,165,233,0.08), transparent 60%),
+      linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+  .font-display { font-family: 'Space Grotesk', sans-serif; letter-spacing: -0.02em; }
+  .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: var(--bg-2); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--primary-2); }
+
+  .sidebar-link { position: relative; transition: all .25s ease; }
+  .sidebar-link::before {
+    content: ''; position: absolute; left: 0; top: 50%;
+    transform: translateY(-50%) scaleY(0);
+    width: 3px; height: 60%; background: var(--primary);
+    border-radius: 0 4px 4px 0; transition: transform .25s ease;
+  }
+  .sidebar-link.active::before, .sidebar-link:hover::before { transform: translateY(-50%) scaleY(1); }
+  .sidebar-link.active { background: linear-gradient(90deg, rgba(254,215,170,0.4), transparent); color: var(--primary); }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border-soft); border-radius: 16px; position: relative; overflow: hidden;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+  }
+  
+  .stat-card {
+    background: radial-gradient(ellipse 200px 100px at 100% 0%, var(--glow, rgba(234,88,12,0.1)), transparent 70%),
+                var(--surface);
+    border: 1px solid var(--border-soft); border-radius: 16px;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+    transition: transform .3s, border-color .3s;
+  }
+  .stat-card:hover { transform: translateY(-2px); border-color: var(--primary-2); }
+
+  .wave-bg { background: linear-gradient(135deg, rgba(249,115,22,0.1), rgba(14,165,233,0.05)), linear-gradient(180deg, #ffffff, #fff7ed); border: 1px solid var(--border-soft); }
+
+  .pulse-dot {
+    width: 8px; height: 8px; border-radius: 50%; background: var(--success);
+    box-shadow: 0 0 0 0 rgba(22,163,74,0.7); animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(22,163,74,0.7); }
+    70% { box-shadow: 0 0 0 8px rgba(22,163,74,0); }
+    100% { box-shadow: 0 0 0 0 rgba(22,163,74,0); }
+  }
+
+  .ship-card {
+    background: linear-gradient(160deg, rgba(249,115,22,0.05) 0%, transparent 50%), var(--surface);
+    border: 1px solid var(--border-soft); border-radius: 18px;
+    transition: all .3s; position: relative; overflow: hidden;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+  }
+  .ship-card:hover { border-color: var(--primary-2); transform: translateY(-3px); box-shadow: 0 12px 24px -10px rgba(249,115,22,0.25); }
+  .ship-card .ship-banner { background: linear-gradient(135deg, #fff7ed, #ffffff); border-bottom: 1px solid var(--border-soft); position: relative; overflow: hidden; }
+  .ship-card .ship-banner::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(circle at 20% 30%, rgba(249,115,22,0.15), transparent 40%),
+                radial-gradient(circle at 80% 70%, rgba(2,132,199,0.1), transparent 40%);
+  }
+
+  .btn-primary { background: linear-gradient(135deg, var(--primary-2), var(--primary)); color: #ffffff; font-weight: 600; transition: all .25s; box-shadow: 0 4px 12px -4px rgba(234,88,12,0.4); }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 20px -4px rgba(234,88,12,0.55); }
+  .btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--text); transition: all .25s; }
+  .btn-ghost:hover { border-color: var(--primary-2); color: var(--primary); background: var(--surface-2); }
+  .btn-danger { background: #fee2e2; color: var(--danger); border: 1px solid #fecaca; transition: all .25s; }
+  .btn-danger:hover { background: #fecaca; }
+  .btn-edit { background: #e0f2fe; color: var(--accent); border: 1px solid #bae6fd; transition: all .25s; }
+  .btn-edit:hover { background: #bae6fd; }
+
+  .input-field { background: var(--bg); border: 1px solid var(--border); color: var(--text); transition: all .2s; }
+  .input-field:focus { outline: none; border-color: var(--primary-2); box-shadow: 0 0 0 3px rgba(249,115,22,0.15); }
+  .input-field::placeholder { color: var(--muted-2); }
+
+  .data-table { border-collapse: separate; border-spacing: 0; width: 100%; }
+  .data-table thead th {
+    background: var(--surface-2); color: var(--primary); font-weight: 600; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.05em; padding: 14px 16px; text-align: left;
+    border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 1;
+  }
+  .data-table tbody td { padding: 14px 16px; border-bottom: 1px solid var(--border-soft); font-size: 13px; color: var(--text); background: var(--surface); }
+  .data-table tbody tr { transition: background .15s; }
+  .data-table tbody tr:hover { background: var(--surface-2); }
+  .data-table tbody tr:last-child td { border-bottom: none; }
+
+  .badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; letter-spacing: 0.02em; }
+  .badge-primary { background: #ffedd5; color: var(--primary); border: 1px solid #fed7aa; }
+  .badge-success { background: #dcfce7; color: var(--success); border: 1px solid #bbf7d0; }
+  .badge-warning { background: #fef9c3; color: var(--warning); border: 1px solid #fef08a; }
+  .badge-violet { background: #ede9fe; color: var(--violet); border: 1px solid #ddd6fe; }
+  .badge-accent { background: #e0f2fe; color: var(--accent); border: 1px solid #bae6fd; }
+  .badge-muted { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+  .badge-danger { background: #fee2e2; color: var(--danger); border: 1px solid #fecaca; }
+
+  .page { display: none; animation: fadeIn .4s ease; }
+  .page.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  .spinner { width: 18px; height: 18px; border: 2px solid rgba(249,115,22,0.2); border-top-color: var(--primary); border-radius: 50%; animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .toast {
+    position: fixed; bottom: 24px; right: 24px; background: var(--surface);
+    border: 1px solid var(--border); border-left: 3px solid var(--primary);
+    padding: 14px 18px; border-radius: 10px; box-shadow: 0 12px 40px -10px rgba(0,0,0,0.15);
+    transform: translateX(120%); transition: transform .4s cubic-bezier(.16,1,.3,1); z-index: 100; max-width: 380px;
+  }
+  .toast.show { transform: translateX(0); }
+  .toast.success { border-left-color: var(--success); }
+  .toast.error { border-left-color: var(--danger); }
+
+  .thread-item { background: var(--surface); border: 1px solid var(--border-soft); border-radius: 14px; transition: all .2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+  .thread-item:hover { border-color: var(--primary-2); }
+  .avatar { width: 38px; height: 38px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex-shrink: 0; color: #ffffff; }
+
+  .floating-ship { animation: floatY 6s ease-in-out infinite; }
+  @keyframes floatY { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+
+  .compass-ring { animation: rotate 30s linear infinite; transform-origin: center; }
+  @keyframes rotate { to { transform: rotate(360deg); } }
+
+  @media (max-width: 1024px) {
+    .sidebar { transform: translateX(-100%); transition: transform .3s; }
+    .sidebar.open { transform: translateX(0); }
+    .sidebar-overlay { display: none; }
+    .sidebar-overlay.show { display: block; }
+  }
+
+  .chart-wrap { position: relative; height: 280px; }
+
+  .tab-pill { padding: 8px 16px; border-radius: 10px; font-size: 13px; font-weight: 600; color: var(--muted); cursor: pointer; transition: all .2s; border: 1px solid transparent; }
+  .tab-pill.active { background: #ffedd5; color: var(--primary); border-color: #fed7aa; }
+  .tab-pill:hover:not(.active) { color: var(--text); background: var(--surface-2); }
+
+  .counter { font-variant-numeric: tabular-nums; }
+
+  select.input-field {
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2378716c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat; background-position: right 12px center; background-size: 16px; padding-right: 36px;
+  }
+
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 50;
+    display: flex; align-items: center; justify-content: center; padding: 1rem;
+    backdrop-filter: blur(4px);
+  }
+</style>
+</head>
+<body class="overflow-x-hidden">
+
+<!-- ============== LOGIN OVERLAY ============== -->
+<div id="loginOverlay" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: linear-gradient(135deg, #fff7ed, #ffffff);">
+  <div class="absolute inset-0 overflow-hidden pointer-events-none">
+    <div class="absolute -top-20 -right-20 w-96 h-96 rounded-full" style="background: rgba(249,115,22,0.1); filter: blur(80px);"></div>
+    <div class="absolute -bottom-20 -left-20 w-96 h-96 rounded-full" style="background: rgba(14,165,233,0.1); filter: blur(80px);"></div>
+  </div>
+  
+  <div class="relative w-full max-w-md">
+    <div class="card p-8">
+      <div class="flex flex-col items-center text-center mb-6">
+        <div class="relative w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style="background: linear-gradient(135deg, var(--primary-2), var(--primary));">
+          <i data-lucide="ship" class="w-8 h-8" style="color: #ffffff;"></i>
+          <div class="absolute -top-1 -right-1 w-4 h-4 rounded-full" style="background: var(--accent); border: 2px solid #ffffff;"></div>
+        </div>
+        <h1 class="font-display text-2xl font-bold">SILIH-TERNAK</h1>
+        <p class="text-sm" style="color: var(--muted);">Sistem Informasi Lalu Lintas Ternak<br>Dinas Peternakan Provinsi NTT</p>
+      </div>
+
+      <div id="loginFormContainer">
+        <form id="loginForm" class="space-y-4">
+          <div>
+            <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Username</label>
+            <input id="loginUsername" type="text" required placeholder="Masukkan username" class="input-field w-full mt-1 px-4 py-2.5 rounded-lg text-sm">
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Password</label>
+            <input id="loginPassword" type="password" required placeholder="Masukkan password" class="input-field w-full mt-1 px-4 py-2.5 rounded-lg text-sm">
+          </div>
+          <div id="loginError" class="hidden text-xs font-semibold" style="color: var(--danger);"></div>
+          <button type="submit" class="btn-primary w-full py-2.5 rounded-lg text-sm flex items-center justify-center gap-2">
+            <i data-lucide="log-in" class="w-4 h-4"></i> Masuk ke Sistem
+          </button>
+          <p class="text-center text-xs" style="color: var(--muted);">
+            Belum punya akun? 
+            <button type="button" onclick="switchAuthView('register')" class="font-semibold" style="color: var(--primary);">Daftar sebagai Pelaku Usaha</button>
+          </p>
+        </form>
+      </div>
+
+      <div id="registerFormContainer" class="hidden">
+        <form id="registerForm" class="space-y-4">
+          <div>
+            <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Nama Lengkap</label>
+            <input id="regNama" type="text" required placeholder="Nama Anda" class="input-field w-full mt-1 px-4 py-2.5 rounded-lg text-sm">
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Nama Perusahaan</label>
+            <input id="regPerusahaan" type="text" required placeholder="PT/CV/UD..." class="input-field w-full mt-1 px-4 py-2.5 rounded-lg text-sm">
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Username</label>
+            <input id="regUsername" type="text" required placeholder="Buat username" class="input-field w-full mt-1 px-4 py-2.5 rounded-lg text-sm">
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Password</label>
+            <input id="regPassword" type="password" required placeholder="Buat password" class="input-field w-full mt-1 px-4 py-2.5 rounded-lg text-sm">
+          </div>
+          <div id="registerError" class="hidden text-xs font-semibold" style="color: var(--danger);"></div>
+          <button type="submit" class="btn-primary w-full py-2.5 rounded-lg text-sm flex items-center justify-center gap-2">
+            <i data-lucide="user-plus" class="w-4 h-4"></i> Daftar Sekarang
+          </button>
+          <p class="text-center text-xs" style="color: var(--muted);">
+            Sudah punya akun? 
+            <button type="button" onclick="switchAuthView('login')" class="font-semibold" style="color: var(--primary);">Kembali ke Login</button>
+          </p>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============== MAIN APP ============== -->
+<div id="mainApp" class="flex min-h-screen" style="display: none;">
+
+  <div class="sidebar-overlay fixed inset-0 bg-black/60 z-30 lg:hidden" onclick="toggleSidebar()"></div>
+
+  <aside class="sidebar fixed lg:sticky top-0 left-0 h-screen w-72 z-40 flex flex-col" style="background: #ffffff; border-right: 1px solid var(--border);">
+    <div class="px-6 py-6 border-b" style="border-color: var(--border);">
+      <div class="flex items-center gap-3">
+        <div class="relative w-11 h-11 rounded-xl flex items-center justify-center" style="background: linear-gradient(135deg, var(--primary-2), var(--primary));">
+          <i data-lucide="ship" class="w-6 h-6" style="color: #ffffff;"></i>
+          <div class="absolute -top-1 -right-1 w-3 h-3 rounded-full" style="background: var(--accent); border: 2px solid #ffffff;"></div>
+        </div>
+        <div>
+          <h1 class="font-display text-lg font-bold leading-tight">SILIH-TERNAK</h1>
+          <p class="text-[11px]" style="color: var(--muted);">Dinas Peternakan Provinsi NTT</p>
+        </div>
+      </div>
+    </div>
+
+    <nav class="flex-1 px-3 py-5 overflow-y-auto">
+      <p class="px-3 mb-2 text-[10px] font-semibold uppercase tracking-wider" style="color: var(--muted-2);">Menu Utama</p>
+      <a class="sidebar-link active flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium cursor-pointer" data-page="dashboard">
+        <i data-lucide="layout-dashboard" class="w-[18px] h-[18px]"></i> Dashboard
+      </a>
+      <a class="sidebar-link flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium cursor-pointer" data-page="data">
+        <i data-lucide="database" class="w-[18px] h-[18px]"></i> Data Pengiriman
+        <span class="ml-auto text-[10px] px-2 py-0.5 rounded-full" style="background: #ffedd5; color: var(--primary);" id="navDataCount">0</span>
+      </a>
+      <a class="sidebar-link flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium cursor-pointer" data-page="kapal">
+        <i data-lucide="ship" class="w-[18px] h-[18px]"></i> Informasi Armada
+      </a>
+      <a class="sidebar-link flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium cursor-pointer" data-page="diskusi">
+        <i data-lucide="messages-square" class="w-[18px] h-[18px]"></i> Panel Diskusi
+        <span class="ml-auto text-[10px] px-2 py-0.5 rounded-full" style="background: #fef9c3; color: var(--warning);" id="navDiskusiCount">0</span>
+      </a>
+      <a class="sidebar-link flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium cursor-pointer" data-page="statistik">
+        <i data-lucide="bar-chart-3" class="w-[18px] h-[18px]"></i> Statistik & Analitik
+      </a>
+
+      <p class="px-3 mt-6 mb-2 text-[10px] font-semibold uppercase tracking-wider" style="color: var(--muted-2);">Armada CN</p>
+      <div class="grid grid-cols-3 gap-2 px-3">
+        <button class="cn-quick p-2 rounded-lg text-[11px] font-semibold transition" data-ship="CN 1" style="background: var(--surface-2); border: 1px solid var(--border-soft);">CN 1</button>
+        <button class="cn-quick p-2 rounded-lg text-[11px] font-semibold transition" data-ship="CN 2" style="background: var(--surface-2); border: 1px solid var(--border-soft);">CN 2</button>
+        <button class="cn-quick p-2 rounded-lg text-[11px] font-semibold transition" data-ship="CN 3" style="background: var(--surface-2); border: 1px solid var(--border-soft);">CN 3</button>
+        <button class="cn-quick p-2 rounded-lg text-[11px] font-semibold transition" data-ship="CN 4" style="background: var(--surface-2); border: 1px solid var(--border-soft);">CN 4</button>
+        <button class="cn-quick p-2 rounded-lg text-[11px] font-semibold transition" data-ship="CN 5" style="background: var(--surface-2); border: 1px solid var(--border-soft);">CN 5</button>
+        <button class="cn-quick p-2 rounded-lg text-[11px] font-semibold transition" data-ship="CN 6" style="background: var(--surface-2); border: 1px solid var(--border-soft);">CN 6</button>
+      </div>
+
+      <p class="px-3 mt-6 mb-2 text-[10px] font-semibold uppercase tracking-wider" style="color: var(--muted-2);">Sistem</p>
+      <a class="sidebar-link flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium cursor-pointer" data-page="pengaturan">
+        <i data-lucide="settings" class="w-[18px] h-[18px]"></i> Pengaturan
+      </a>
+    </nav>
+
+    <div class="m-3 p-3 rounded-xl" style="background: var(--surface-2); border: 1px solid var(--border);">
+      <div class="flex items-center gap-2 mb-1.5">
+        <div class="pulse-dot"></div>
+        <span class="text-xs font-semibold">Tersinkron Otomatis</span>
+      </div>
+      <p class="text-[11px] mb-2" style="color: var(--muted);">Sumber: Google Spreadsheet Resmi</p>
+      <button onclick="loadCSV(true)" class="w-full text-[11px] py-1.5 rounded-md font-semibold flex items-center justify-center gap-1.5" style="background: #ffffff; border: 1px solid var(--border);">
+        <i data-lucide="refresh-cw" class="w-3 h-3"></i> Muat Ulang Data
+      </button>
+    </div>
+  </aside>
+
+  <main class="flex-1 min-w-0 lg:ml-0">
+    <header class="sticky top-0 z-20 backdrop-blur-xl border-b" style="background: rgba(255, 255, 255, 0.85); border-color: var(--border);">
+      <div class="flex items-center gap-4 px-4 lg:px-8 py-3.5">
+        <button class="lg:hidden p-2 rounded-lg" style="background: var(--surface-2);" onclick="toggleSidebar()">
+          <i data-lucide="menu" class="w-5 h-5"></i>
+        </button>
+        <div class="flex-1 max-w-md relative hidden md:block">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2" style="color: var(--muted-2);"></i>
+          <input id="globalSearch" type="text" placeholder="Cari perusahaan, surat, pelabuhan..." class="input-field w-full pl-9 pr-4 py-2 rounded-lg text-sm" oninput="handleGlobalSearch(this.value)">
+        </div>
+        <div class="flex items-center gap-3 ml-auto">
+          <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg" style="background: var(--surface-2); border: 1px solid var(--border);">
+            <i data-lucide="calendar" class="w-4 h-4" style="color: var(--muted);"></i>
+            <span class="text-xs font-medium" id="currentDate">—</span>
+          </div>
+          <button class="relative p-2 rounded-lg" style="background: var(--surface-2); border: 1px solid var(--border);">
+            <i data-lucide="bell" class="w-5 h-5" style="color: var(--muted);"></i>
+            <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full" style="background: var(--primary);"></span>
+          </button>
+          
+          <div class="flex items-center gap-2.5 pl-3" style="border-left: 1px solid var(--border);">
+            <div id="userAvatar" class="avatar" style="background: linear-gradient(135deg, var(--primary-2), var(--accent));">OP</div>
+            <div class="hidden sm:block">
+              <p class="text-xs font-semibold leading-tight" id="userName">Administrator</p>
+              <p class="text-[10px]" style="color: var(--muted);" id="userRole">Dinas Peternakan NTT</p>
+            </div>
+            <button onclick="logout()" class="p-2 rounded-lg" style="color: var(--danger);" title="Keluar">
+              <i data-lucide="log-out" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <section id="page-dashboard" class="page active px-4 lg:px-8 py-6">
+      <div class="wave-bg rounded-2xl p-6 lg:p-8 mb-6 relative overflow-hidden">
+        <div class="relative z-10 max-w-2xl">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="badge badge-primary"><i data-lucide="radio" class="w-3 h-3"></i> Live Monitoring</span>
+            <span class="badge badge-muted" id="lastUpdateBadge">Memuat...</span>
+          </div>
+          <h2 class="font-display text-3xl lg:text-4xl font-bold mb-2">Sistem Informasi Lalu Lintas Ternak</h2>
+          <p class="text-sm lg:text-base mb-5" style="color: var(--muted);">Pantau aktivitas pengiriman dan distribusi ternak di wilayah Provinsi NTT secara real-time, terhubung langsung dengan data Google Spreadsheet resmi.</p>
+          <div class="flex flex-wrap gap-2">
+            <button class="btn-primary px-4 py-2 rounded-lg text-sm flex items-center gap-2" onclick="navigate('data')">
+              <i data-lucide="table" class="w-4 h-4"></i> Lihat Data Pengiriman
+            </button>
+            <button class="btn-ghost px-4 py-2 rounded-lg text-sm flex items-center gap-2" onclick="navigate('kapal')">
+              <i data-lucide="ship" class="w-4 h-4"></i> Status Armada
+            </button>
+          </div>
+        </div>
+        <div class="absolute -right-10 -top-10 lg:right-10 lg:top-1/2 lg:-translate-y-1/2 opacity-30 lg:opacity-50 pointer-events-none">
+          <svg width="220" height="220" viewBox="0 0 220 220" class="floating-ship">
+            <g class="compass-ring">
+              <circle cx="110" cy="110" r="100" fill="none" stroke="#ea580c" stroke-width="1" stroke-dasharray="2 4" opacity="0.5"/>
+              <circle cx="110" cy="110" r="80" fill="none" stroke="#0284c7" stroke-width="1" stroke-dasharray="4 6" opacity="0.4"/>
+              <g stroke="#ea580c" stroke-width="1.5" opacity="0.7">
+                <line x1="110" y1="20" x2="110" y2="35"/>
+                <line x1="110" y1="185" x2="110" y2="200"/>
+                <line x1="20" y1="110" x2="35" y2="110"/>
+                <line x1="185" y1="110" x2="200" y2="110"/>
+              </g>
+              <text x="110" y="14" text-anchor="middle" fill="#ea580c" font-size="11" font-family="Space Grotesk" font-weight="600">N</text>
+              <text x="110" y="212" text-anchor="middle" fill="#78716c" font-size="11" font-family="Space Grotesk" font-weight="600">S</text>
+              <text x="10" y="114" text-anchor="middle" fill="#78716c" font-size="11" font-family="Space Grotesk" font-weight="600">W</text>
+              <text x="210" y="114" text-anchor="middle" fill="#78716c" font-size="11" font-family="Space Grotesk" font-weight="600">E</text>
+            </g>
+            <g transform="translate(110, 110)">
+              <polygon points="0,-40 8,0 0,8 -8,0" fill="#0284c7" opacity="0.9"/>
+              <polygon points="0,40 8,0 0,-8 -8,0" fill="#ea580c" opacity="0.7"/>
+              <circle r="6" fill="#ffffff" stroke="#ea580c" stroke-width="1.5"/>
+            </g>
+          </svg>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div class="stat-card p-5" style="--glow: rgba(249,115,22,0.15);">
+          <div class="flex items-start justify-between mb-3">
+            <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background: #ffedd5;">
+              <i data-lucide="package-check" class="w-5 h-5" style="color: var(--primary);"></i>
+            </div>
+            <span class="badge badge-success"><i data-lucide="trending-up" class="w-3 h-3"></i> Aktif</span>
+          </div>
+          <p class="text-xs mb-1" style="color: var(--muted);">Total Pengiriman</p>
+          <h3 class="font-display text-3xl font-bold counter" id="statTotal">—</h3>
+          <p class="text-[11px] mt-2" style="color: var(--muted-2);">Tercatat di sistem</p>
+        </div>
+        <div class="stat-card p-5" style="--glow: rgba(2,132,199,0.15);">
+          <div class="flex items-start justify-between mb-3">
+            <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background: #e0f2fe;">
+              <i data-lucide="ship" class="w-5 h-5" style="color: var(--accent);"></i>
+            </div>
+            <span class="badge badge-accent">6 Unit</span>
+          </div>
+          <p class="text-xs mb-1" style="color: var(--muted);">Armada Aktif</p>
+          <h3 class="font-display text-3xl font-bold counter">6</h3>
+          <p class="text-[11px] mt-2" style="color: var(--muted-2);">Kapal CN 1 s/d CN 6</p>
+        </div>
+        <div class="stat-card p-5" style="--glow: rgba(22,163,74,0.15);">
+          <div class="flex items-start justify-between mb-3">
+            <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background: #dcfce7;">
+              <i data-lucide="bug" class="w-5 h-5" style="color: var(--success);"></i>
+            </div>
+            <span class="badge badge-primary">Ternak</span>
+          </div>
+          <p class="text-xs mb-1" style="color: var(--muted);">Total Ternak Kirim</p>
+          <h3 class="font-display text-3xl font-bold counter" id="statTernak">—</h3>
+          <p class="text-[11px] mt-2" style="color: var(--muted-2);">Akumulasi seluruh pengiriman</p>
+        </div>
+        <div class="stat-card p-5" style="--glow: rgba(124,58,237,0.15);">
+          <div class="flex items-start justify-between mb-3">
+            <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background: #ede9fe;">
+              <i data-lucide="map-pin" class="w-5 h-5" style="color: var(--violet);"></i>
+            </div>
+            <span class="badge badge-violet">Rute</span>
+          </div>
+          <p class="text-xs mb-1" style="color: var(--muted);">Daerah Tujuan Unik</p>
+          <h3 class="font-display text-3xl font-bold counter" id="statDaerah">—</h3>
+          <p class="text-[11px] mt-2" style="color: var(--muted-2);">Sebaran wilayah</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-6">
+        <div class="card lg:col-span-2 p-5">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="font-display text-lg font-bold">Pengiriman Terbaru</h3>
+              <p class="text-xs" style="color: var(--muted);">5 entri data terkini dari sistem</p>
+            </div>
+            <button class="text-xs font-semibold flex items-center gap-1.5" style="color: var(--primary);" onclick="navigate('data')">
+              Lihat Semua <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>Pengirim</th>
+                  <th>Tujuan</th>
+                  <th class="text-right">Ternak</th>
+                </tr>
+              </thead>
+              <tbody id="recentTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card p-5">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="font-display text-lg font-bold">Status Armada</h3>
+              <p class="text-xs" style="color: var(--muted);">CN 1 — CN 6</p>
+            </div>
+            <i data-lucide="ship" class="w-5 h-5" style="color: var(--muted);"></i>
+          </div>
+          <div class="space-y-3" id="shipStatusList"></div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div class="card p-5">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="font-display text-lg font-bold">Tren Pengiriman</h3>
+              <p class="text-xs" style="color: var(--muted);">Berdasarkan timestamp</p>
+            </div>
+            <span class="badge badge-primary">7 Periode Terakhir</span>
+          </div>
+          <div class="chart-wrap"><canvas id="chartTrend"></canvas></div>
+        </div>
+        <div class="card p-5">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="font-display text-lg font-bold">Distribusi Daerah Tujuan</h3>
+              <p class="text-xs" style="color: var(--muted);">Top 6 daerah</p>
+            </div>
+            <i data-lucide="pie-chart" class="w-5 h-5" style="color: var(--muted);"></i>
+          </div>
+          <div class="chart-wrap"><canvas id="chartDaerah"></canvas></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="page-data" class="page px-4 lg:px-8 py-6">
+      <div class="flex flex-wrap items-end justify-between gap-4 mb-6">
+        <div>
+          <h2 class="font-display text-2xl lg:text-3xl font-bold mb-1">Data Pengiriman Ternak</h2>
+          <p class="text-sm" style="color: var(--muted);">Tersinkronisasi otomatis dari Google Spreadsheet.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button class="btn-ghost px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-2" onclick="exportCSV()">
+            <i data-lucide="download" class="w-4 h-4"></i> Export CSV
+          </button>
+          <button class="btn-primary px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-2" onclick="loadCSV(true)">
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i> Sinkronkan
+          </button>
+          <button id="btnAddData" class="btn-primary px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 hidden" onclick="openModal('add')">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i> Tambah Data Baru
+          </button>
+        </div>
+      </div>
+
+      <div class="card p-4 mb-5">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+          <div class="lg:col-span-2">
+            <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Pencarian</label>
+            <div class="relative mt-1">
+              <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2" style="color: var(--muted-2);"></i>
+              <input id="tableSearch" type="text" placeholder="Cari nama, surat, pelabuhan..." class="input-field w-full pl-9 pr-4 py-2 rounded-lg text-sm" oninput="renderTable()">
+            </div>
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Daerah Tujuan</label>
+            <select id="filterDaerah" class="input-field w-full mt-1 py-2 px-3 rounded-lg text-sm" onchange="renderTable()">
+              <option value="">Semua</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Pelabuhan Muat</label>
+            <select id="filterMuat" class="input-field w-full mt-1 py-2 px-3 rounded-lg text-sm" onchange="renderTable()">
+              <option value="">Semua</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Pelabuhan Tujuan</label>
+            <select id="filterTujuan" class="input-field w-full mt-1 py-2 px-3 rounded-lg text-sm" onchange="renderTable()">
+              <option value="">Semua</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="card overflow-hidden">
+        <div class="flex items-center justify-between p-4 border-b" style="border-color: var(--border);">
+          <div class="flex items-center gap-3">
+            <span class="text-sm font-semibold" id="tableInfo">0 entri</span>
+            <span class="badge badge-success"><i data-lucide="check-circle-2" class="w-3 h-3"></i> Live</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <select id="pageSize" class="input-field py-1.5 px-2 rounded-md text-xs" onchange="renderTable()">
+              <option value="10">10 / halaman</option>
+              <option value="25" selected>25 / halaman</option>
+              <option value="50">50 / halaman</option>
+              <option value="100">100 / halaman</option>
+            </select>
+          </div>
+        </div>
+        <div class="overflow-x-auto" style="max-height: 65vh;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>Daerah Tujuan</th>
+                <th>Jenis Permohonan</th>
+                <th>Surat Permohonan</th>
+                <th>Surat Izin</th>
+                <th>Sertifikat Kesehatan Hewan KH 11</th>
+                <th>Nama Perusahaan Pengirim</th>
+                <th>Nama Pengirim</th>
+                <th>Nama Perusahaan Penerima/Nama Penerima</th>
+                <th class="text-right">Jumlah ternak (ekor)</th>
+                <th>Pelabuhan Muat</th>
+                <th>Pelabuhan Tujuan</th>
+                <th>Status</th>
+                <th id="thAction" class="hidden">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="dataTableBody"></tbody>
+          </table>
+        </div>
+        <div class="flex items-center justify-between p-4 border-t" style="border-color: var(--border);">
+          <p class="text-xs" style="color: var(--muted);" id="paginationInfo">—</p>
+          <div class="flex items-center gap-1" id="paginationControls"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="page-kapal" class="page px-4 lg:px-8 py-6">
+      <div class="mb-6">
+        <h2 class="font-display text-2xl lg:text-3xl font-bold mb-1">Informasi Armada Kapal</h2>
+        <p class="text-sm" style="color: var(--muted);">Detail 6 unit kapal pengangkut ternak CN 1 sampai CN 6.</p>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5" id="shipCardsGrid"></div>
+    </section>
+
+    <section id="page-diskusi" class="page px-4 lg:px-8 py-6">
+      <div class="mb-6">
+        <h2 class="font-display text-2xl lg:text-3xl font-bold mb-1">Panel Diskusi Pelaku Usaha</h2>
+        <p class="text-sm" style="color: var(--muted);">Tempat pelaku usaha mengirimkan pertanyaan, berbagi informasi, dan berdiskusi terkait pengiriman ternak.</p>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div class="card p-5 lg:col-span-1 h-fit lg:sticky lg:top-24">
+          <div class="flex items-center gap-2 mb-4">
+            <div class="w-9 h-9 rounded-lg flex items-center justify-center" style="background: #ffedd5;">
+              <i data-lucide="message-circle-plus" class="w-5 h-5" style="color: var(--primary);"></i>
+            </div>
+            <div>
+              <h3 class="font-display text-base font-bold">Tulis Pertanyaan</h3>
+              <p class="text-[11px]" style="color: var(--muted);">Pertanyaan akan tampil di panel</p>
+            </div>
+          </div>
+          <form id="diskusiForm" class="space-y-3">
+            <div>
+              <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Nama Lengkap</label>
+              <input id="formNama" required type="text" placeholder="Contoh: Budi Santoso" class="input-field w-full mt-1 px-3 py-2 rounded-lg text-sm">
+            </div>
+            <div>
+              <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Nama Perusahaan</label>
+              <input id="formPerusahaan" type="text" placeholder="PT / CV / UD" class="input-field w-full mt-1 px-3 py-2 rounded-lg text-sm">
+            </div>
+            <div>
+              <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Kategori</label>
+              <select id="formKategori" class="input-field w-full mt-1 px-3 py-2 rounded-lg text-sm">
+                <option value="Umum">Pertanyaan Umum</option>
+                <option value="Perizinan">Perizinan & Dokumen</option>
+                <option value="Teknis">Teknis Kapal & Muatan</option>
+                <option value="Pelabuhan">Pelabuhan & Logistik</option>
+                <option value="Ternak">Perawatan Ternak</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Pertanyaan</label>
+              <textarea id="formPesan" required rows="4" placeholder="Tuliskan pertanyaan atau diskusi Anda..." class="input-field w-full mt-1 px-3 py-2 rounded-lg text-sm resize-none"></textarea>
+            </div>
+            <button type="submit" class="btn-primary w-full py-2.5 rounded-lg text-sm flex items-center justify-center gap-2">
+              <i data-lucide="send" class="w-4 h-4"></i> Kirim Pertanyaan
+            </button>
+          </form>
+        </div>
+        <div class="lg:col-span-2 space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex gap-1 p-1 rounded-xl" style="background: var(--surface-2); border: 1px solid var(--border);">
+              <button class="tab-pill active" data-filter="all" onclick="filterThread('all', this)">Semua</button>
+              <button class="tab-pill" data-filter="Umum" onclick="filterThread('Umum', this)">Umum</button>
+              <button class="tab-pill" data-filter="Perizinan" onclick="filterThread('Perizinan', this)">Perizinan</button>
+              <button class="tab-pill" data-filter="Teknis" onclick="filterThread('Teknis', this)">Teknis</button>
+              <button class="tab-pill" data-filter="Pelabuhan" onclick="filterThread('Pelabuhan', this)">Pelabuhan</button>
+            </div>
+            <span class="text-xs" style="color: var(--muted);"><span id="threadCount">0</span> diskusi aktif</span>
+          </div>
+          <div id="threadList" class="space-y-3"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="page-statistik" class="page px-4 lg:px-8 py-6">
+      <div class="mb-6">
+        <h2 class="font-display text-2xl lg:text-3xl font-bold mb-1">Statistik & Analitik</h2>
+        <p class="text-sm" style="color: var(--muted);">Visualisasi data pengiriman ternak berdasarkan berbagai dimensi.</p>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
+        <div class="card p-5">
+          <h3 class="font-display text-lg font-bold mb-1">Top Perusahaan Pengirim</h3>
+          <p class="text-xs mb-4" style="color: var(--muted);">Berdasarkan volume pengiriman</p>
+          <div class="chart-wrap"><canvas id="chartPengirim"></canvas></div>
+        </div>
+        <div class="card p-5">
+          <h3 class="font-display text-lg font-bold mb-1">Aktivitas Pelabuhan</h3>
+          <p class="text-xs mb-4" style="color: var(--muted);">Pelabuhan muat vs tujuan</p>
+          <div class="chart-wrap"><canvas id="chartPelabuhan"></canvas></div>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div class="card p-5 lg:col-span-2">
+          <h3 class="font-display text-lg font-bold mb-1">Volume Ternak per Daerah Tujuan</h3>
+          <p class="text-xs mb-4" style="color: var(--muted);">Total jumlah ternak dikirim per daerah</p>
+          <div class="chart-wrap" style="height: 320px;"><canvas id="chartVolumeDaerah"></canvas></div>
+        </div>
+        <div class="card p-5">
+          <h3 class="font-display text-lg font-bold mb-1">Ringkasan</h3>
+          <p class="text-xs mb-4" style="color: var(--muted);">Metrik kunci</p>
+          <div class="space-y-3" id="statsSummary"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="page-pengaturan" class="page px-4 lg:px-8 py-6">
+      <div class="mb-6">
+        <h2 class="font-display text-2xl lg:text-3xl font-bold mb-1">Pengaturan Sistem</h2>
+        <p class="text-sm" style="color: var(--muted);">Konfigurasi sumber data dan preferensi tampilan.</p>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div class="card p-5">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background: #ffedd5;">
+              <i data-lucide="database" class="w-5 h-5" style="color: var(--primary);"></i>
+            </div>
+            <div>
+              <h3 class="font-display text-base font-bold">Sumber Data</h3>
+              <p class="text-[11px]" style="color: var(--muted);">Google Spreadsheet (CSV Publik)</p>
+            </div>
+          </div>
+          <div class="space-y-3">
+            <div>
+              <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">URL CSV</label>
+              <input id="csvUrlInput" type="text" class="input-field w-full mt-1 px-3 py-2 rounded-lg text-xs font-mono" value="https://docs.google.com/spreadsheets/d/e/2PACX-1vTj9fD4wEmclrF78Y0H9fCeTXt10LQoiUByfukD-zdit4gyKgfmNwt6ccLiSNo1aA/pub?output=csv">
+            </div>
+            <div class="flex items-center justify-between p-3 rounded-lg" style="background: var(--surface-2); border: 1px solid var(--border);">
+              <div>
+                <p class="text-xs font-semibold">Sinkronisasi Otomatis</p>
+                <p class="text-[10px]" style="color: var(--muted);">Muat ulang setiap 5 menit</p>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" class="sr-only peer" checked>
+                <div class="w-10 h-5 rounded-full peer-checked:bg-orange-500/40 transition" style="background: var(--border);"></div>
+                <div class="absolute left-0.5 top-0.5 w-4 h-4 rounded-full transition peer-checked:translate-x-5" style="background: var(--primary);"></div>
+              </label>
+            </div>
+            <button class="btn-primary w-full py-2 rounded-lg text-sm flex items-center justify-center gap-2" onclick="loadCSV(true)">
+              <i data-lucide="refresh-cw" class="w-4 h-4"></i> Muat Ulang Sekarang
+            </button>
+          </div>
+        </div>
+        <div class="card p-5">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background: #e0f2fe;">
+              <i data-lucide="info" class="w-5 h-5" style="color: var(--accent);"></i>
+            </div>
+            <div>
+              <h3 class="font-display text-base font-bold">Informasi Aplikasi</h3>
+              <p class="text-[11px]" style="color: var(--muted);">SILIH-TERNAK NTT</p>
+            </div>
+          </div>
+          <div class="space-y-2.5 text-sm">
+            <div class="flex justify-between py-2 border-b" style="border-color: var(--border-soft);">
+              <span style="color: var(--muted);">Versi</span>
+              <span class="font-mono">v3.0.0</span>
+            </div>
+            <div class="flex justify-between py-2 border-b" style="border-color: var(--border-soft);">
+              <span style="color: var(--muted);">Total Armada</span>
+              <span class="font-semibold">6 Kapal (CN 1–6)</span>
+            </div>
+            <div class="flex justify-between py-2 border-b" style="border-color: var(--border-soft);">
+              <span style="color: var(--muted);">Instansi</span>
+              <span class="font-semibold">Dinas Peternakan NTT</span>
+            </div>
+            <div class="flex justify-between py-2 border-b" style="border-color: var(--border-soft);">
+              <span style="color: var(--muted);">Penyimpanan Diskusi</span>
+              <span class="font-semibold">Local Browser</span>
+            </div>
+            <div class="flex justify-between py-2">
+              <span style="color: var(--muted);">Status</span>
+              <span class="badge badge-success"><span class="pulse-dot" style="width:6px;height:6px;"></span> Online</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- MODAL: Add/Edit Data (Admin Only) -->
+<div id="dataModal" class="modal-overlay hidden">
+  <div class="card w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between p-5 border-b" style="border-color: var(--border);">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg flex items-center justify-center" style="background: #ffedd5;">
+          <i data-lucide="plus-circle" class="w-5 h-5" style="color: var(--primary);" id="modalIcon"></i>
+        </div>
+        <h3 class="font-display text-lg font-bold" id="modalTitle">Tambah Data Pengiriman Baru</h3>
+      </div>
+      <button onclick="closeModal()" class="p-2 rounded-lg hover:bg-gray-100">
+        <i data-lucide="x" class="w-5 h-5" style="color: var(--muted);"></i>
+      </button>
+    </div>
+    <form id="dataForm" class="p-5 space-y-4">
+      <input type="hidden" id="editId">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Timestamp</label>
+          <input required type="datetime-local" id="fTimestamp" class="input-field w-full mt-1 px-3 py-2 rounded-lg text-sm">
+        </div>
+        <div>
+          <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Daerah Tujuan</label>
+          <input required type="text" id="fDaerah" class="input-field w-full mt-1 px-3 py-2 rounded-lg text-sm">
+        </div>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Jenis Permohonan</label>
+          <input required type="text" id="fJenis" class="input-field w-full mt-1 px-3 py-2 rounded-lg text-sm">
+        </div>
+        <div>
+          <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Surat Permohonan</label>
+          <input required type="text" id="fSuratPermohonan" class="input-field w-full mt-1 px-3 py-2 rounded-lg text-sm">
+        </div>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Surat Izin</label>
+          <input required type="text" id="fSuratIzin" class="input-field w-full mt-1 px-3 py-2 rounded-lg text-sm">
+        </div>
+        <div>
+          <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Sertifikat KH 11</label>
+          <input required type="text" id="fKH11" class="input-field w-full mt-1 px-3 py-2 rounded-lg text-sm">
+        </div>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Perusahaan Pengirim</label>
+          <input required type="text" id="fPengirim" class="input-field w-full mt-1 px-3 py-2 rounded-lg text-sm">
+        </div>
+        <div>
+          <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Nama Pengirim</label>
+          <input required type="text" id="fNamaPengirim" class="input-field w-full mt-1 px-3 py-2 rounded-lg text-sm">
+        </div>
+      </div>
+      <div>
+        <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Nama Perusahaan Penerima/Nama Penerima</label>
+        <input required type="text" id="fPenerima" class="input-field w-full mt-1 px-3 py-2 rounded-lg text-sm">
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Jumlah ternak (ekor)</label>
+          <input required type="number" min="1" id="fJumlah" class="input-field w-full mt-1 px-3 py-2 rounded-lg text-sm">
+        </div>
+        <div>
+          <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Pelabuhan Muat</label>
+          <input required type="text" id="fMuat" class="input-field w-full mt-1 px-3 py-2 rounded-lg text-sm">
+        </div>
+        <div>
+          <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Pelabuhan Tujuan</label>
+          <input required type="text" id="fTujuan" class="input-field w-full mt-1 px-3 py-2 rounded-lg text-sm">
+        </div>
+      </div>
+      <div class="pt-3 flex justify-end gap-2 border-t" style="border-color: var(--border-soft);">
+        <button type="button" onclick="closeModal()" class="btn-ghost px-4 py-2 rounded-lg text-sm">Batal</button>
+        <button type="submit" class="btn-primary px-4 py-2 rounded-lg text-sm flex items-center gap-2" id="modalSubmitBtn">
+          <i data-lucide="save" class="w-4 h-4"></i> Simpan Data
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="toast" class="toast">
+  <div class="flex items-start gap-3">
+    <i data-lucide="info" class="w-5 h-5 mt-0.5" style="color: var(--primary);" id="toastIcon"></i>
+    <div>
+      <p class="font-semibold text-sm" id="toastTitle">Informasi</p>
+      <p class="text-xs mt-0.5" style="color: var(--muted);" id="toastMsg">Pesan toast</p>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============== STATE & AUTH ============== */
+const STATE = {
+  raw: [],
+  filtered: [],
+  currentPage: 1,
+  pageSize: 25,
+  threadFilter: 'all',
+  threads: [],
+  charts: {},
+  user: null
+};
+
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTj9fD4wEmclrF78Y0H9fCeTXt10LQoiUByfukD-zdit4gyKgfmNwt6ccLiSNo1aA/pub?output=csv';
+
+const ALLOWED_FIELDS = [
+  'Timestamp',
+  'Daerah Tujuan',
+  'Jenis Permohonan',
+  'Surat Permohonan',
+  'Surat Izin',
+  'Sertifikat Kesehatan Hewan KH 11',
+  'Nama Perusahaan Pengirim',
+  'Nama Pengirim',
+  'Nama Perusahaan Penerima/Nama Penerima',
+  'Jumlah ternak (ekor)',
+  'Pelabuhan Muat',
+  'Pelabuhan Tujuan'
+];
+
+const SHIPS = [
+  { code: 'CN 1', name: 'Cahaya Nusantara I', capacity: 550, type: 'Kapal Pengangkut Sapi', status: 'Aktif', route: 'Kupang → Wini → Tanjung Priuk → Kupang', flag: 'Indonesia', gt: 1250, lastMaintenance: 'Des 2025' },
+  { code: 'CN 2', name: 'Cahaya Nusantara II', capacity: 550, type: 'Kapal Pengangkut Sapi', status: 'Aktif', route: 'Kupang → Wini → Samarinda → Kupang', flag: 'Indonesia', gt: 1380, lastMaintenance: 'Des 2025' },
+  { code: 'CN 3', name: 'Cahaya Nusantara III', capacity: 550, type: 'Kapal Pengangkut Sapi', status: 'Aktif', route: 'Kupang → Wini → Samarinda → Kupang', flag: 'Indonesia', gt: 1100, lastMaintenance: 'Des 2025' },
+  { code: 'CN 4', name: 'Cahaya Nusantara IV', capacity: 550, type: 'Kapal Pengangkut Sapi', status: 'Aktif', route: 'Bima → Sape → Tanjung Priuk → Bima', flag: 'Indonesia', gt: 1620, lastMaintenance: 'Agust 2026' },
+  { code: 'CN 5', name: 'Cahaya Nusantara V', capacity: 550, type: 'Kapal Pengangkut Sapi', status: 'Aktif', route: 'Kwandang → Tarakan → Balikpapan → Kupang → Banjarmasin → Kwandang', flag: 'Indonesia', gt: 1180, lastMaintenance: 'Agu 2026' },
+  { code: 'CN 6', name: 'Cahaya Nusantara VI', capacity: 550, type: 'Kapal Pengangkut Sapi', status: 'Aktif', route: 'Kupang → Wini → Banjarmasin → Kupang', flag: 'Indonesia', gt: 1450, lastMaintenance: 'Des 2025' }
+];
+
+const SHIP_AVATAR_COLORS = [
+  ['#f97316','#ea580c'], ['#0ea5e9','#0284c7'], ['#22c55e','#16a34a'],
+  ['#8b5cf6','#7c3aed'], ['#eab308','#ca8a04'], ['#ef4444','#dc2626']
+];
+
+/* ============== UTILITIES ============== */
+function $(id) { return document.getElementById(id); }
+function normalize(str) { return String(str || '').trim().toLowerCase(); }
+
+function formatDate(s) {
+  if (!s) return '—';
+  const d = new Date(s);
+  if (isNaN(d)) return s;
+  return d.toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+function showToast(title, msg, type = 'info') {
+  const t = $('toast');
+  t.className = 'toast show ' + type;
+  $('toastTitle').textContent = title;
+  $('toastMsg').textContent = msg;
+  const icon = $('toastIcon');
+  const icons = { success: 'check-circle-2', error: 'alert-circle', info: 'info' };
+  icon.setAttribute('data-lucide', icons[type] || 'info');
+  lucide.createIcons();
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.className = 'toast ' + type; }, 3800);
+}
+
+function escapeHtml(str) {
+  return String(str || '').replace(/[&<>"']/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;' }[m]));
+}
+
+/* ============== DATA MUTATIONS ============== */
+function getMutations() {
+  return JSON.parse(localStorage.getItem('silih_mutations') || '{"verified": [], "deleted": [], "edited": {}}');
+}
+
+function saveMutations(mut) {
+  localStorage.setItem('silih_mutations', JSON.stringify(mut));
+}
+
+function getRowId(row) {
+  return (row['Timestamp'] || '') + '|' + (row['Nama Perusahaan Pengirim'] || '') + '|' + (row['Surat Permohonan'] || '');
+}
+
+/* ============== AUTHENTICATION ============== */
+function initAuth() {
+  const savedUser = localStorage.getItem('silih_user');
+  if (savedUser) {
+    STATE.user = JSON.parse(savedUser);
+    showApp();
+  } else {
+    showLogin();
+  }
+}
+
+function switchAuthView(view) {
+  if (view === 'register') {
+    $('loginFormContainer').classList.add('hidden');
+    $('registerFormContainer').classList.remove('hidden');
+  } else {
+    $('registerFormContainer').classList.add('hidden');
+    $('loginFormContainer').classList.remove('hidden');
+  }
+}
+
+ $('loginForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const u = $('loginUsername').value.trim();
+  const p = $('loginPassword').value.trim();
+  
+  const users = JSON.parse(localStorage.getItem('silih_users') || '[]');
+  const defaultAdmin = { username: 'admin', password: 'admin123', role: 'admin', nama: 'Administrator', perusahaan: 'Dinas Peternakan NTT' };
+  
+  let foundUser = null;
+  if (u === 'admin' && p === 'admin123') {
+    foundUser = defaultAdmin;
+  } else {
+    foundUser = users.find(usr => usr.username === u && usr.password === p);
+  }
+
+  if (foundUser) {
+    STATE.user = foundUser;
+    localStorage.setItem('silih_user', JSON.stringify(foundUser));
+    showApp();
+    showToast('Login Berhasil', `Selamat datang, ${foundUser.nama}!`, 'success');
+  } else {
+    $('loginError').textContent = 'Username atau password salah.';
+    $('loginError').classList.remove('hidden');
+  }
+});
+
+ $('registerForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const nama = $('regNama').value.trim();
+  const perusahaan = $('regPerusahaan').value.trim();
+  const username = $('regUsername').value.trim();
+  const password = $('regPassword').value.trim();
+
+  const users = JSON.parse(localStorage.getItem('silih_users') || '[]');
+  if (users.find(u => u.username === username) || username === 'admin') {
+    $('registerError').textContent = 'Username sudah digunakan.';
+    $('registerError').classList.remove('hidden');
+    return;
+  }
+
+  const newUser = { username, password, nama, perusahaan, role: 'user' };
+  users.push(newUser);
+  localStorage.setItem('silih_users', JSON.stringify(users));
+  
+  STATE.user = newUser;
+  localStorage.setItem('silih_user', JSON.stringify(newUser));
+  showApp();
+  showToast('Registrasi Berhasil', `Selamat datang, ${nama}!`, 'success');
+});
+
+function logout() {
+  STATE.user = null;
+  localStorage.removeItem('silih_user');
+  showLogin();
+  showToast('Logout Berhasil', 'Anda telah keluar dari sistem.', 'info');
+}
+
+function showLogin() {
+  $('loginOverlay').style.display = 'flex';
+  $('mainApp').style.display = 'none';
+}
+
+function showApp() {
+  $('loginOverlay').style.display = 'none';
+  $('mainApp').style.display = 'flex';
+  applyRoleUI();
+  loadThreads();
+  loadCSV();
+  updateDate();
+}
+
+function applyRoleUI() {
+  if (!STATE.user) return;
+  const isAdmin = STATE.user.role === 'admin';
+  
+  $('userName').textContent = STATE.user.nama;
+  $('userRole').textContent = STATE.user.perusahaan || (isAdmin ? 'Administrator' : 'Pelaku Usaha');
+  $('userAvatar').textContent = STATE.user.nama.split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
+
+  if (isAdmin) {
+    $('btnAddData').classList.remove('hidden');
+    $('thAction').classList.remove('hidden');
+  } else {
+    $('btnAddData').classList.add('hidden');
+    $('thAction').classList.add('hidden');
+  }
+  renderTable(); 
+  renderThreads(); 
+}
+
+/* ============== NAVIGATION ============== */
+function navigate(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  $('page-' + page).classList.add('active');
+  document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+  document.querySelector(`.sidebar-link[data-page="${page}"]`)?.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (window.innerWidth < 1024) toggleSidebar(false);
+}
+
+function toggleSidebar(force) {
+  const sb = document.querySelector('.sidebar');
+  const ov = document.querySelector('.sidebar-overlay');
+  const open = force !== undefined ? force : !sb.classList.contains('open');
+  sb.classList.toggle('open', open);
+  ov.classList.toggle('show', open);
+}
+
+document.querySelectorAll('.sidebar-link[data-page]').forEach(link => {
+  link.addEventListener('click', () => navigate(link.dataset.page));
+});
+document.querySelectorAll('.cn-quick').forEach(btn => {
+  btn.addEventListener('click', () => {
+    navigate('kapal');
+    setTimeout(() => {
+      const card = document.querySelector(`[data-ship-card="${btn.dataset.ship}"]`);
+      if (card) {
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        card.style.borderColor = 'var(--primary-2)';
+        card.style.boxShadow = '0 12px 40px -10px rgba(249,115,22,0.4)';
+        setTimeout(() => { card.style.borderColor = ''; card.style.boxShadow = ''; }, 2000);
+      }
+    }, 300);
+  });
+});
+
+/* ============== CSV LOADING ============== */
+function loadCSV(showToastFlag = false) {
+  if (showToastFlag) showToast('Memuat data', 'Menghubungkan ke Google Spreadsheet...', 'info');
+  
+  Papa.parse(CSV_URL, {
+    download: true,
+    header: true,
+    skipEmptyLines: true,
+    complete: function(results) {
+      try {
+        const sheetData = results.data.map(row => {
+          const obj = {};
+          ALLOWED_FIELDS.forEach(f => {
+            const key = Object.keys(row).find(k => normalize(k) === normalize(f));
+            obj[f] = key ? row[key] : '';
+          });
+          return obj;
+        }).filter(r => r['Timestamp'] || r['Surat Permohonan'] || r['Nama Perusahaan Pengirim']);
+
+        const localData = JSON.parse(localStorage.getItem('silih_manual_data') || '[]');
+        let combinedData = [...localData, ...sheetData];
+
+        const mut = getMutations();
+        STATE.raw = combinedData.map(row => {
+          row._id = getRowId(row);
+          if (mut.edited[row._id]) {
+            Object.assign(row, mut.edited[row._id]);
+          }
+          row.isVerified = mut.verified.includes(row._id);
+          return row;
+        }).filter(row => !mut.deleted.includes(row._id));
+
+        STATE.filtered = [...STATE.raw];
+        
+        populateFilters();
+        renderAll();
+        updateLastUpdate();
+        
+        if (showToastFlag) {
+          showToast('Data tersinkron', `${STATE.raw.length} entri berhasil dimuat`, 'success');
+        }
+      } catch (e) {
+        console.error(e);
+        showToast('Gagal memproses', 'Terjadi kesalahan saat memproses data', 'error');
+      }
+    },
+    error: function(err) {
+      console.error(err);
+      showToast('Gagal memuat', 'Tidak dapat terhubung ke sumber data', 'error');
+    }
+  });
+}
+
+function updateLastUpdate() {
+  const now = new Date();
+  const txt = now.toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+  $('lastUpdateBadge').textContent = 'Update: ' + txt;
+}
+
+function populateFilters() {
+  const daerah = [...new Set(STATE.raw.map(r => r['Daerah Tujuan']).filter(Boolean))].sort();
+  const muat = [...new Set(STATE.raw.map(r => r['Pelabuhan Muat']).filter(Boolean))].sort();
+  const tujuan = [...new Set(STATE.raw.map(r => r['Pelabuhan Tujuan']).filter(Boolean))].sort();
+  
+  const fillSelect = (id, arr) => {
+    const el = $(id);
+    const val = el.value;
+    el.innerHTML = '<option value="">Semua</option>' + arr.map(v => `<option value="${v}">${v}</option>`).join('');
+    el.value = val;
+  };
+  fillSelect('filterDaerah', daerah);
+  fillSelect('filterMuat', muat);
+  fillSelect('filterTujuan', tujuan);
+}
+
+/* ============== RENDER DASHBOARD ============== */
+function renderAll() {
+  renderStats();
+  renderRecent();
+  renderShipStatus();
+  renderTable();
+  renderShipCards();
+  renderThreads();
+  if (Object.keys(STATE.charts).length) destroyCharts();
+  renderCharts();
+  $('navDataCount').textContent = STATE.raw.length;
+}
+
+function renderStats() {
+  const total = STATE.raw.length;
+  const ternak = STATE.raw.reduce((sum, r) => {
+    const num = parseInt(String(r['Jumlah ternak (ekor)']).replace(/\D/g, '')) || 0;
+    return sum + num;
+  }, 0);
+  const daerah = new Set(STATE.raw.map(r => r['Daerah Tujuan']).filter(Boolean)).size;
+  
+  animateCounter('statTotal', total);
+  animateCounter('statTernak', ternak);
+  animateCounter('statDaerah', daerah);
+}
+
+function animateCounter(id, target) {
+  const el = $(id);
+  const duration = 1000;
+  const start = parseInt(el.textContent.replace(/\D/g, '')) || 0;
+  const startTime = performance.now();
+  function step(now) {
+    const p = Math.min((now - startTime) / duration, 1);
+    const ease = 1 - Math.pow(1 - p, 3);
+    el.textContent = Math.round(start + (target - start) * ease).toLocaleString('id-ID');
+    if (p < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+function renderRecent() {
+  const recent = [...STATE.raw].slice(0, 5);
+  if (!recent.length) {
+    $('recentTableBody').innerHTML = `<tr><td colspan="4" class="text-center py-6" style="color: var(--muted);">Belum ada data</td></tr>`;
+    return;
+  }
+  $('recentTableBody').innerHTML = recent.map(r => `
+    <tr>
+      <td class="font-mono text-xs">${formatDate(r['Timestamp'])}</td>
+      <td>
+        <p class="font-semibold text-xs">${escapeHtml(r['Nama Perusahaan Pengirim'] || '—')}</p>
+        <p class="text-[11px]" style="color: var(--muted);">${escapeHtml(r['Nama Pengirim'] || '')}</p>
+      </td>
+      <td><span class="badge badge-violet">${escapeHtml(r['Daerah Tujuan'] || '—')}</span></td>
+      <td class="text-right font-mono font-semibold" style="color: var(--primary);">${parseInt(String(r['Jumlah ternak (ekor)']).replace(/\D/g, '') || 0).toLocaleString('id-ID')}</td>
+    </tr>
+  `).join('');
+}
+
+function renderShipStatus() {
+  const colors = SHIP_AVATAR_COLORS;
+  $('shipStatusList').innerHTML = SHIPS.map((s, i) => {
+    const load = Math.floor(Math.random() * 30) + 60;
+    return `
+    <div class="flex items-center gap-3 p-2.5 rounded-lg" style="background: var(--surface-2); border: 1px solid var(--border-soft);">
+      <div class="avatar" style="background: linear-gradient(135deg, ${colors[i][0]}, ${colors[i][1]}); width: 34px; height: 34px; font-size: 11px;">${s.code.split(' ')[1]}</div>
+      <div class="flex-1 min-w-0">
+        <p class="text-xs font-semibold truncate">${s.name}</p>
+        <p class="text-[10px]" style="color: var(--muted);">${s.route}</p>
+      </div>
+      <div class="text-right">
+        <p class="text-xs font-semibold" style="color: var(--success);">${load}%</p>
+        <div class="w-12 h-1 rounded-full mt-1" style="background: var(--border);">
+          <div class="h-full rounded-full" style="width: ${load}%; background: linear-gradient(90deg, var(--success), var(--primary-2));"></div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ============== TABLE ============== */
+function renderTable() {
+  const search = normalize($('tableSearch').value);
+  const fDaerah = $('filterDaerah').value;
+  const fMuat = $('filterMuat').value;
+  const fTujuan = $('filterTujuan').value;
+  const isAdmin = STATE.user && STATE.user.role === 'admin';
+  
+  let data = STATE.raw.filter(r => {
+    if (fDaerah && r['Daerah Tujuan'] !== fDaerah) return false;
+    if (fMuat && r['Pelabuhan Muat'] !== fMuat) return false;
+    if (fTujuan && r['Pelabuhan Tujuan'] !== fTujuan) return false;
+    if (search) {
+      const haystack = normalize(Object.values(r).join(' '));
+      if (!haystack.includes(search)) return false;
+    }
+    return true;
+  });
+  
+  STATE.filtered = data;
+  STATE.pageSize = parseInt($('pageSize').value);
+  const totalPages = Math.max(1, Math.ceil(data.length / STATE.pageSize));
+  if (STATE.currentPage > totalPages) STATE.currentPage = totalPages;
+  
+  const start = (STATE.currentPage - 1) * STATE.pageSize;
+  const pageData = data.slice(start, start + STATE.pageSize);
+  
+  $('tableInfo').textContent = `${data.length} entri`;
+  $('paginationInfo').textContent = `Menampilkan ${pageData.length ? start + 1 : 0}–${start + pageData.length} dari ${data.length} entri`;
+  
+  if (!pageData.length) {
+    $('dataTableBody').innerHTML = `<tr><td colspan="14" class="text-center py-12" style="color: var(--muted);">
+      <i data-lucide="inbox" class="w-8 h-8 mx-auto mb-2"></i>Tidak ada data yang sesuai dengan filter
+    </td></tr>`;
+    lucide.createIcons();
+  } else {
+    $('dataTableBody').innerHTML = pageData.map((r) => {
+      const verified = r.isVerified;
+      const statusBadge = verified ? 
+        `<span class="badge badge-success"><i data-lucide="check-circle" class="w-3 h-3"></i> Terverifikasi</span>` : 
+        `<span class="badge badge-danger"><i data-lucide="alert-circle" class="w-3 h-3"></i> Belum Lengkap</span>`;
+      
+      const actionBtn = isAdmin ? `
+        <div class="flex gap-1">
+          <button onclick="toggleVerify('${r._id}')" class="text-[11px] font-semibold px-2 py-1 rounded-md" style="background: ${verified ? '#fee2e2' : '#dcfce7'}; color: ${verified ? 'var(--danger)' : 'var(--success)'};">
+            ${verified ? 'Batal' : 'Verifikasi'}
+          </button>
+          <button onclick="openModal('edit','${r._id}')" class="text-[11px] font-semibold px-2 py-1 rounded-md btn-edit">
+            <i data-lucide="edit" class="w-3 h-3"></i>
+          </button>
+          <button onclick="deleteData('${r._id}')" class="text-[11px] font-semibold px-2 py-1 rounded-md btn-danger">
+            <i data-lucide="trash-2" class="w-3 h-3"></i>
+          </button>
+        </div>` : '';
+      
+      return `
+      <tr>
+        <td class="font-mono text-xs whitespace-nowrap">${formatDate(r['Timestamp'])}</td>
+        <td><span class="badge badge-violet">${escapeHtml(r['Daerah Tujuan'] || '—')}</span></td>
+        <td class="text-xs">${escapeHtml(r['Jenis Permohonan'] || '—')}</td>
+        <td class="font-mono text-xs">${escapeHtml(r['Surat Permohonan'] || '—')}</td>
+        <td class="font-mono text-xs">${escapeHtml(r['Surat Izin'] || '—')}</td>
+        <td class="font-mono text-xs">${escapeHtml(r['Sertifikat Kesehatan Hewan KH 11'] || '—')}</td>
+        <td><p class="font-semibold text-xs">${escapeHtml(r['Nama Perusahaan Pengirim'] || '—')}</p></td>
+        <td class="text-xs">${escapeHtml(r['Nama Pengirim'] || '—')}</td>
+        <td class="text-xs">${escapeHtml(r['Nama Perusahaan Penerima/Nama Penerima'] || '—')}</td>
+        <td class="text-right font-mono font-bold" style="color: var(--primary);">${parseInt(String(r['Jumlah ternak (ekor)']).replace(/\D/g, '') || 0).toLocaleString('id-ID')}</td>
+        <td><span class="badge badge-muted">${escapeHtml(r['Pelabuhan Muat'] || '—')}</span></td>
+        <td><span class="badge badge-primary">${escapeHtml(r['Pelabuhan Tujuan'] || '—')}</span></td>
+        <td>${statusBadge}</td>
+        <td>${actionBtn}</td>
+      </tr>`;
+    }).join('');
+  }
+  
+  const ctrl = $('paginationControls');
+  let html = '';
+  const addBtn = (label, page, disabled, active) => {
+    html += `<button onclick="goToPage(${page})" ${disabled ? 'disabled' : ''} class="px-3 py-1.5 rounded-md text-xs font-semibold transition ${active ? '' : 'hover:bg-orange-50'}" style="${active ? 'background: var(--primary); color: #ffffff;' : 'color: var(--muted);' + (disabled ? ' opacity: 0.4; cursor: not-allowed;' : '')}">${label}</button>`;
+  };
+  addBtn('<i data-lucide="chevron-left" class="w-3 h-3"></i>', STATE.currentPage - 1, STATE.currentPage === 1, false);
+  
+  const maxButtons = 5;
+  let startPage = Math.max(1, STATE.currentPage - Math.floor(maxButtons / 2));
+  let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+  if (endPage - startPage < maxButtons - 1) startPage = Math.max(1, endPage - maxButtons + 1);
+  
+  if (startPage > 1) { addBtn('1', 1, false, false); if (startPage > 2) html += `<span class="px-1 text-xs" style="color: var(--muted);">...</span>`; }
+  for (let i = startPage; i <= endPage; i++) addBtn(i, i, false, i === STATE.currentPage);
+  if (endPage < totalPages) { if (endPage < totalPages - 1) html += `<span class="px-1 text-xs" style="color: var(--muted);">...</span>`; addBtn(totalPages, totalPages, false, false); }
+  
+  addBtn('<i data-lucide="chevron-right" class="w-3 h-3"></i>', STATE.currentPage + 1, STATE.currentPage === totalPages, false);
+  ctrl.innerHTML = html;
+  lucide.createIcons();
+}
+
+function toggleVerify(id) {
+  const mut = getMutations();
+  if (mut.verified.includes(id)) {
+    mut.verified = mut.verified.filter(v => v !== id);
+    showToast('Status Diperbarui', 'Data ditandai belum lengkap.', 'info');
+  } else {
+    mut.verified.push(id);
+    showToast('Status Diperbarui', 'Data berhasil diverifikasi.', 'success');
+  }
+  saveMutations(mut);
+  STATE.raw.forEach(r => { if(r._id === id) r.isVerified = mut.verified.includes(id); });
+  renderTable();
+}
+
+function deleteData(id) {
+  if (!confirm('Apakah Anda yakin ingin menghapus data ini? Data akan dihapus permanen untuk semua pengguna.')) return;
+  
+  const mut = getMutations();
+  if (!mut.deleted.includes(id)) {
+    mut.deleted.push(id);
+    saveMutations(mut);
+  }
+
+  let localData = JSON.parse(localStorage.getItem('silih_manual_data') || '[]');
+  localData = localData.filter(r => getRowId(r) !== id);
+  localStorage.setItem('silih_manual_data', JSON.stringify(localData));
+
+  STATE.raw = STATE.raw.filter(r => r._id !== id);
+  STATE.filtered = [...STATE.raw];
+  populateFilters();
+  renderAll();
+  showToast('Data Dihapus', 'Data berhasil dihapus dari sistem.', 'success');
+}
+
+function goToPage(p) {
+  STATE.currentPage = p;
+  renderTable();
+}
+
+function handleGlobalSearch(val) {
+  if ($('page-data').classList.contains('active')) {
+    $('tableSearch').value = val;
+    renderTable();
+  } else if (val) {
+    navigate('data');
+    $('tableSearch').value = val;
+    renderTable();
+  }
+}
+
+/* ============== ADD/EDIT MODAL ============== */
+function openModal(mode, id = null) {
+  const modal = $('dataModal');
+  const title = $('modalTitle');
+  const icon = $('modalIcon');
+  const submitBtn = $('modalSubmitBtn');
+  const form = $('dataForm');
+
+  form.reset();
+
+  if (mode === 'edit') {
+    title.textContent = 'Edit Data Pengiriman';
+    icon.setAttribute('data-lucide', 'edit');
+    submitBtn.innerHTML = '<i data-lucide="save" class="w-4 h-4"></i> Update Data';
+    
+    const row = STATE.raw.find(r => r._id === id);
+    if (row) {
+      $('editId').value = id;
+      $('fTimestamp').value = new Date(row['Timestamp']).toISOString().slice(0, 16);
+      $('fDaerah').value = row['Daerah Tujuan'] || '';
+      $('fJenis').value = row['Jenis Permohonan'] || '';
+      $('fSuratPermohonan').value = row['Surat Permohonan'] || '';
+      $('fSuratIzin').value = row['Surat Izin'] || '';
+      $('fKH11').value = row['Sertifikat Kesehatan Hewan KH 11'] || '';
+      $('fPengirim').value = row['Nama Perusahaan Pengirim'] || '';
+      $('fNamaPengirim').value = row['Nama Pengirim'] || '';
+      $('fPenerima').value = row['Nama Perusahaan Penerima/Nama Penerima'] || '';
+      $('fJumlah').value = parseInt(String(row['Jumlah ternak (ekor)']).replace(/\D/g, '')) || 0;
+      $('fMuat').value = row['Pelabuhan Muat'] || '';
+      $('fTujuan').value = row['Pelabuhan Tujuan'] || '';
+    }
+  } else {
+    title.textContent = 'Tambah Data Pengiriman Baru';
+    icon.setAttribute('data-lucide', 'plus-circle');
+    submitBtn.innerHTML = '<i data-lucide="save" class="w-4 h-4"></i> Simpan Data';
+    $('editId').value = '';
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    $('fTimestamp').value = now.toISOString().slice(0, 16);
+  }
+
+  modal.classList.remove('hidden');
+  lucide.createIcons();
+}
+
+function closeModal() {
+  $('dataModal').classList.add('hidden');
+}
+
+ $('dataForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const id = $('editId').value;
+  
+  const formData = {
+    'Timestamp': $('fTimestamp').value,
+    'Daerah Tujuan': $('fDaerah').value,
+    'Jenis Permohonan': $('fJenis').value,
+    'Surat Permohonan': $('fSuratPermohonan').value,
+    'Surat Izin': $('fSuratIzin').value,
+    'Sertifikat Kesehatan Hewan KH 11': $('fKH11').value,
+    'Nama Perusahaan Pengirim': $('fPengirim').value,
+    'Nama Pengirim': $('fNamaPengirim').value,
+    'Nama Perusahaan Penerima/Nama Penerima': $('fPenerima').value,
+    'Jumlah ternak (ekor)': $('fJumlah').value,
+    'Pelabuhan Muat': $('fMuat').value,
+    'Pelabuhan Tujuan': $('fTujuan').value
+  };
+
+  if (id) {
+    // Edit Mode
+    const mut = getMutations();
+    mut.edited[id] = formData;
+    saveMutations(mut);
+
+    // Also update local data if it exists there
+    let localData = JSON.parse(localStorage.getItem('silih_manual_data') || '[]');
+    const localIdx = localData.findIndex(r => getRowId(r) === id);
+    if (localIdx !== -1) {
+      localData[localIdx] = formData;
+      localStorage.setItem('silih_manual_data', JSON.stringify(localData));
+    }
+
+    showToast('Data Diperbarui', 'Perubahan data berhasil disimpan.', 'success');
+  } else {
+    // Add Mode
+    const localData = JSON.parse(localStorage.getItem('silih_manual_data') || '[]');
+    localData.push(formData);
+    localStorage.setItem('silih_manual_data', JSON.stringify(localData));
+    showToast('Data Ditambahkan', 'Data baru berhasil disimpan ke sistem.', 'success');
+  }
+  
+  closeModal();
+  loadCSV();
+});
+
+/* ============== SHIP CARDS ============== */
+function renderShipCards() {
+  $('shipCardsGrid').innerHTML = SHIPS.map((s, i) => {
+    const c = SHIP_AVATAR_COLORS[i];
+    const statusBadge = s.status === 'Aktif' ? 'badge-success' : 'badge-warning';
+    return `
+    <div class="ship-card" data-ship-card="${s.code}">
+      <div class="ship-banner p-5 pb-4">
+        <div class="flex items-start justify-between relative z-10">
+          <div class="flex items-center gap-3">
+            <div class="avatar" style="background: linear-gradient(135deg, ${c[0]}, ${c[1]}); width: 44px; height: 44px; font-size: 14px;">${s.code.split(' ')[1]}</div>
+            <div>
+              <h3 class="font-display text-base font-bold">${s.code}</h3>
+              <p class="text-[11px]" style="color: var(--muted);">${s.name}</p>
+            </div>
+          </div>
+          <span class="badge ${statusBadge}"><span class="pulse-dot" style="width:6px;height:6px;"></span> ${s.status}</span>
+        </div>
+        <div class="mt-3 flex items-center gap-2 text-[11px] relative z-10" style="color: var(--muted);">
+          <i data-lucide="route" class="w-3.5 h-3.5"></i> ${s.route}
+        </div>
+      </div>
+      <div class="p-5">
+        <div class="grid grid-cols-2 gap-3 mb-4">
+          <div class="p-2.5 rounded-lg" style="background: var(--surface-2);">
+            <p class="text-[10px] uppercase tracking-wider" style="color: var(--muted);">Kapasitas</p>
+            <p class="font-display font-bold text-lg" style="color: ${c[0]};">${s.capacity}</p>
+            <p class="text-[10px]" style="color: var(--muted-2);">ekor</p>
+          </div>
+          <div class="p-2.5 rounded-lg" style="background: var(--surface-2);">
+            <p class="text-[10px] uppercase tracking-wider" style="color: var(--muted);">Gross Tonnage</p>
+            <p class="font-display font-bold text-lg" style="color: ${c[0]};">${s.gt}</p>
+            <p class="text-[10px]" style="color: var(--muted-2);">GT</p>
+          </div>
+        </div>
+        <div class="space-y-2 text-xs">
+          <div class="flex justify-between py-1.5 border-b" style="border-color: var(--border-soft);">
+            <span style="color: var(--muted);">Tipe Kapal</span>
+            <span class="font-medium text-right">${s.type}</span>
+          </div>
+          <div class="flex justify-between py-1.5 border-b" style="border-color: var(--border-soft);">
+            <span style="color: var(--muted);">Bendera</span>
+            <span class="font-medium">${s.flag}</span>
+          </div>
+          <div class="flex justify-between py-1.5">
+            <span style="color: var(--muted);">Maintenance Terakhir</span>
+            <span class="font-medium">${s.lastMaintenance}</span>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  lucide.createIcons();
+}
+
+/* ============== DISCUSSION ============== */
+function loadThreads() {
+  const saved = localStorage.getItem('silih_threads');
+  if (saved) {
+    STATE.threads = JSON.parse(saved);
+  } else {
+    STATE.threads = [
+      { id: Date.now() - 86400000, nama: 'Hendra Wijaya', perusahaan: 'PT Sumber Makmur Ternak', kategori: 'Perizinan', pesan: 'Mohon informasi prosedur perpanjangan surat izin pengiriman ternak antar pulau. Apakah bisa diajukan secara online melalui sistem ini?', timestamp: new Date(Date.now() - 86400000).toISOString(), replies: [{ nama: 'Admin SILIH-TERNAK', pesan: 'Untuk perpanjangan surat izin, saat ini masih melalui kantor dinas. Sistem online akan tersedia segera.', timestamp: new Date(Date.now() - 80000000).toISOString() }] },
+      { id: Date.now() - 172800000, nama: 'Siti Aminah', perusahaan: 'CV Berkah Peternakan', kategori: 'Teknis', pesan: 'Berapa kapasitas maksimal muatan CN 4 untuk pengiriman sapi? Apakah ada standar kandang khusus selama perjalanan?', timestamp: new Date(Date.now() - 172800000).toISOString(), replies: [] },
+      { id: Date.now() - 259200000, nama: 'Bambang Sutrisno', perusahaan: 'PT Nusantara Livestock', kategori: 'Pelabuhan', pesan: 'Apakah ada jadwal keberangkatan tetap kapal CN 1 rute Kupang - Surabaya setiap bulannya?', timestamp: new Date(Date.now() - 259200000).toISOString(), replies: [{ nama: 'Operator CN 1', pesan: 'Jadwal keberangkatan CN 1 setiap tanggal 5, 15, dan 25. Mohon konfirmasi minimal H-3 sebelum keberangkatan.', timestamp: new Date(Date.now() - 230000000).toISOString() }] }
+    ];
+    saveThreads();
+  }
+}
+
+function saveThreads() { localStorage.setItem('silih_threads', JSON.stringify(STATE.threads)); }
+
+function renderThreads() {
+  const filtered = STATE.threadFilter === 'all' ? STATE.threads : STATE.threads.filter(t => t.kategori === STATE.threadFilter);
+  $('threadCount').textContent = filtered.length;
+  $('navDiskusiCount').textContent = STATE.threads.length;
+  
+  const isAdmin = STATE.user && STATE.user.role === 'admin';
+  
+  if (!filtered.length) {
+    $('threadList').innerHTML = `
+      <div class="card p-8 text-center">
+        <i data-lucide="message-square-off" class="w-10 h-10 mx-auto mb-3" style="color: var(--muted-2);"></i>
+        <p class="text-sm font-semibold mb-1">Belum ada diskusi</p>
+        <p class="text-xs" style="color: var(--muted);">Jadilah yang pertama mengajukan pertanyaan</p>
+      </div>`;
+    lucide.createIcons();
+    return;
+  }
+  
+  const kategoriColors = { 'Umum': 'badge-primary', 'Perizinan': 'badge-accent', 'Teknis': 'badge-violet', 'Pelabuhan': 'badge-success', 'Ternak': 'badge-warning' };
+  
+  $('threadList').innerHTML = filtered.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp)).map(t => {
+    const initials = t.nama.split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
+    const colorIdx = (t.id % 6);
+    const c = SHIP_AVATAR_COLORS[colorIdx];
+    return `
+    <div class="thread-item p-4">
+      <div class="flex items-start gap-3">
+        <div class="avatar" style="background: linear-gradient(135deg, ${c[0]}, ${c[1]});">${initials}</div>
+        <div class="flex-1 min-w-0">
+          <div class="flex flex-wrap items-center gap-2 mb-1">
+            <p class="font-semibold text-sm">${escapeHtml(t.nama)}</p>
+            ${t.perusahaan ? `<span class="text-[11px]" style="color: var(--muted);">• ${escapeHtml(t.perusahaan)}</span>` : ''}
+            <span class="badge ${kategoriColors[t.kategori] || 'badge-muted'} ml-auto">${t.kategori}</span>
+          </div>
+          <p class="text-xs mb-2" style="color: var(--muted-2);">${formatDate(t.timestamp)}</p>
+          <p class="text-sm leading-relaxed mb-3">${escapeHtml(t.pesan)}</p>
+          
+          ${t.replies && t.replies.length ? `
+            <div class="ml-2 pl-4 space-y-2" style="border-left: 2px solid var(--border);">
+              ${t.replies.map(r => `
+                <div class="flex items-start gap-2">
+                  <div class="avatar" style="background: var(--surface-2); color: var(--primary); width: 28px; height: 28px; font-size: 11px;">${r.nama[0]}</div>
+                  <div class="flex-1">
+                    <div class="flex items-center gap-2 mb-0.5">
+                      <p class="font-semibold text-xs">${escapeHtml(r.nama)}</p>
+                      <span class="badge badge-primary text-[9px]">Admin</span>
+                    </div>
+                    <p class="text-[11px] mb-1" style="color: var(--muted-2);">${formatDate(r.timestamp)}</p>
+                    <p class="text-xs leading-relaxed">${escapeHtml(r.pesan)}</p>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          ` : ''}
+          
+          <div class="flex items-center gap-3 mt-3 pt-3" style="border-top: 1px solid var(--border-soft);">
+            ${isAdmin ? `
+              <button class="text-[11px] font-semibold flex items-center gap-1.5" style="color: var(--primary);" onclick="toggleReply(${t.id})">
+                <i data-lucide="reply" class="w-3.5 h-3.5"></i> Balas
+              </button>
+            ` : ''}
+            <button class="text-[11px] font-semibold flex items-center gap-1.5" style="color: var(--muted);">
+              <i data-lucide="thumbs-up" class="w-3.5 h-3.5"></i> Bermanfaat
+            </button>
+          </div>
+          
+          <div id="reply-form-${t.id}" class="hidden mt-3">
+            <textarea id="reply-text-${t.id}" rows="2" placeholder="Tulis balasan sebagai Admin..." class="input-field w-full px-3 py-2 rounded-lg text-xs resize-none"></textarea>
+            <div class="flex gap-2 mt-2">
+              <button onclick="submitReply(${t.id})" class="btn-primary px-3 py-1.5 rounded-md text-xs">Kirim Balasan</button>
+              <button onclick="toggleReply(${t.id})" class="btn-ghost px-3 py-1.5 rounded-md text-xs">Batal</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  lucide.createIcons();
+}
+
+function toggleReply(id) {
+  const form = $(`reply-form-${id}`);
+  form.classList.toggle('hidden');
+  if (!form.classList.contains('hidden')) $(`reply-text-${id}`).focus();
+}
+
+function submitReply(id) {
+  const text = $(`reply-text-${id}`).value.trim();
+  if (!text) return;
+  const thread = STATE.threads.find(t => t.id === id);
+  if (thread) {
+    thread.replies = thread.replies || [];
+    thread.replies.push({ nama: STATE.user.nama, pesan: text, timestamp: new Date().toISOString() });
+    saveThreads();
+    renderThreads();
+    showToast('Balasan terkirim', 'Balasan Anda telah ditambahkan ke diskusi', 'success');
+  }
+}
+
+function filterThread(cat, btn) {
+  STATE.threadFilter = cat;
+  document.querySelectorAll('.tab-pill').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderThreads();
+}
+
+ $('diskusiForm')?.addEventListener('submit', e => {
+  e.preventDefault();
+  const nama = $('formNama').value.trim();
+  const perusahaan = $('formPerusahaan').value.trim();
+  const kategori = $('formKategori').value;
+  const pesan = $('formPesan').value.trim();
+  if (!nama || !pesan) { showToast('Lengkapi form', 'Nama dan pertanyaan wajib diisi', 'error'); return; }
+  STATE.threads.push({ id: Date.now(), nama, perusahaan, kategori, pesan, timestamp: new Date().toISOString(), replies: [] });
+  saveThreads();
+  renderThreads();
+  $('diskusiForm').reset();
+  showToast('Pertanyaan terkirim', 'Pertanyaan Anda telah dipublikasikan di panel diskusi', 'success');
+});
+
+/* ============== CHARTS ============== */
+function destroyCharts() {
+  Object.values(STATE.charts).forEach(c => c && c.destroy());
+  STATE.charts = {};
+}
+
+function renderCharts() {
+  Chart.defaults.color = '#78716c';
+  Chart.defaults.font.family = 'Plus Jakarta Sans';
+  Chart.defaults.borderColor = '#ffedd5';
+  
+  const byDate = {};
+  STATE.raw.forEach(r => {
+    const d = new Date(r['Timestamp']);
+    if (isNaN(d)) return;
+    const key = d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
+    byDate[key] = (byDate[key] || 0) + 1;
+  });
+  const dateKeys = Object.keys(byDate).slice(-7);
+  
+  STATE.charts.trend = new Chart($('chartTrend'), {
+    type: 'line',
+    data: {
+      labels: dateKeys,
+      datasets: [{
+        label: 'Pengiriman',
+        data: dateKeys.map(k => byDate[k]),
+        borderColor: '#ea580c',
+        backgroundColor: (ctx) => {
+          const g = ctx.chart.ctx.createLinearGradient(0, 0, 0, 280);
+          g.addColorStop(0, 'rgba(234,88,12,0.35)');
+          g.addColorStop(1, 'rgba(234,88,12,0)');
+          return g;
+        },
+        fill: true, tension: 0.4, borderWidth: 2.5,
+        pointBackgroundColor: '#ea580c', pointBorderColor: '#ffffff',
+        pointBorderWidth: 2, pointRadius: 5, pointHoverRadius: 7
+      }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#ffedd5' }, ticks: { precision: 0 } }, x: { grid: { display: false } } } }
+  });
+  
+  const byDaerah = {};
+  STATE.raw.forEach(r => { if (r['Daerah Tujuan']) byDaerah[r['Daerah Tujuan']] = (byDaerah[r['Daerah Tujuan']] || 0) + 1; });
+  const topDaerah = Object.entries(byDaerah).sort((a,b) => b[1] - a[1]).slice(0, 6);
+  
+  STATE.charts.daerah = new Chart($('chartDaerah'), {
+    type: 'doughnut',
+    data: {
+      labels: topDaerah.map(d => d[0]),
+      datasets: [{
+        data: topDaerah.map(d => d[1]),
+        backgroundColor: ['#ea580c', '#0284c7', '#16a34a', '#7c3aed', '#ca8a04', '#dc2626'],
+        borderColor: '#ffffff', borderWidth: 3
+      }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { position: 'right', labels: { boxWidth: 10, padding: 12, font: { size: 11 } } } } }
+  });
+  
+  const byPengirim = {};
+  STATE.raw.forEach(r => { if (r['Nama Perusahaan Pengirim']) byPengirim[r['Nama Perusahaan Pengirim']] = (byPengirim[r['Nama Perusahaan Pengirim']] || 0) + 1; });
+  const topPengirim = Object.entries(byPengirim).sort((a,b) => b[1] - a[1]).slice(0, 8);
+  
+  STATE.charts.pengirim = new Chart($('chartPengirim'), {
+    type: 'bar',
+    data: {
+      labels: topPengirim.map(p => p[0].length > 20 ? p[0].substring(0, 18) + '…' : p[0]),
+      datasets: [{
+        data: topPengirim.map(p => p[1]),
+        backgroundColor: (ctx) => {
+          const g = ctx.chart.ctx.createLinearGradient(0, 0, 400, 0);
+          g.addColorStop(0, '#ea580c');
+          g.addColorStop(1, '#7c3aed');
+          return g;
+        },
+        borderRadius: 6, barThickness: 18
+      }]
+    },
+    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, grid: { color: '#ffedd5' }, ticks: { precision: 0 } }, y: { grid: { display: false } } } }
+  });
+  
+  const byMuat = {};
+  const byTujuan = {};
+  STATE.raw.forEach(r => {
+    if (r['Pelabuhan Muat']) byMuat[r['Pelabuhan Muat']] = (byMuat[r['Pelabuhan Muat']] || 0) + 1;
+    if (r['Pelabuhan Tujuan']) byTujuan[r['Pelabuhan Tujuan']] = (byTujuan[r['Pelabuhan Tujuan']] || 0) + 1;
+  });
+  const allPorts = [...new Set([...Object.keys(byMuat), ...Object.keys(byTujuan)])].slice(0, 8);
+  
+  STATE.charts.pelabuhan = new Chart($('chartPelabuhan'), {
+    type: 'bar',
+    data: {
+      labels: allPorts,
+      datasets: [
+        { label: 'Muat', data: allPorts.map(p => byMuat[p] || 0), backgroundColor: '#ea580c', borderRadius: 5, barThickness: 14 },
+        { label: 'Tujuan', data: allPorts.map(p => byTujuan[p] || 0), backgroundColor: '#0284c7', borderRadius: 5, barThickness: 14 }
+      ]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels: { boxWidth: 10, font: { size: 11 } } } }, scales: { y: { beginAtZero: true, grid: { color: '#ffedd5' }, ticks: { precision: 0 } }, x: { grid: { display: false }, ticks: { font: { size: 10 } } } } }
+  });
+  
+  const volDaerah = {};
+  STATE.raw.forEach(r => {
+    if (r['Daerah Tujuan']) {
+      const num = parseInt(String(r['Jumlah ternak (ekor)']).replace(/\D/g, '')) || 0;
+      volDaerah[r['Daerah Tujuan']] = (volDaerah[r['Daerah Tujuan']] || 0) + num;
+    }
+  });
+  const topVol = Object.entries(volDaerah).sort((a,b) => b[1] - a[1]).slice(0, 10);
+  
+  STATE.charts.volDaerah = new Chart($('chartVolumeDaerah'), {
+    type: 'bar',
+    data: {
+      labels: topVol.map(d => d[0]),
+      datasets: [{
+        label: 'Total Ternak',
+        data: topVol.map(d => d[1]),
+        backgroundColor: (ctx) => {
+          const g = ctx.chart.ctx.createLinearGradient(0, 0, 0, 320);
+          g.addColorStop(0, '#ea580c');
+          g.addColorStop(1, 'rgba(234,88,12,0.2)');
+          return g;
+        },
+        borderRadius: 6, barThickness: 22
+      }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#ffedd5' }, ticks: { callback: v => v.toLocaleString('id-ID') } }, x: { grid: { display: false }, ticks: { font: { size: 10 } } } } }
+  });
+  
+  const total = STATE.raw.length;
+  const ternak = STATE.raw.reduce((s,r) => s + (parseInt(String(r['Jumlah ternak (ekor)']).replace(/\D/g, '')) || 0), 0);
+  const avgTernak = total ? Math.round(ternak / total) : 0;
+  const topCompany = topPengirim.length ? topPengirim[0][0] : '—';
+  const topDaerahName = topDaerah.length ? topDaerah[0][0] : '—';
+  
+  $('statsSummary').innerHTML = [
+    { label: 'Total Entri', value: total.toLocaleString('id-ID'), icon: 'database', color: 'var(--primary)' },
+    { label: 'Total Ternak', value: ternak.toLocaleString('id-ID'), icon: 'bug', color: 'var(--success)' },
+    { label: 'Rata-rata Ternak/Entri', value: avgTernak.toLocaleString('id-ID'), icon: 'bar-chart-2', color: 'var(--accent)' },
+    { label: 'Pengirim Teratas', value: topCompany.length > 22 ? topCompany.substring(0,20) + '…' : topCompany, icon: 'award', color: 'var(--violet)' },
+    { label: 'Daerah Tujuan Teratas', value: topDaerahName, icon: 'map-pin', color: 'var(--warning)' }
+  ].map(item => `
+    <div class="p-3 rounded-lg flex items-center gap-3" style="background: var(--surface-2); border: 1px solid var(--border-soft);">
+      <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background: ${item.color}20;">
+        <i data-lucide="${item.icon}" class="w-4 h-4" style="color: ${item.color};"></i>
+      </div>
+      <div class="min-w-0">
+        <p class="text-[10px] uppercase tracking-wider" style="color: var(--muted);">${item.label}</p>
+        <p class="font-display font-bold text-sm truncate">${item.value}</p>
+      </div>
+    </div>
+  `).join('');
+  lucide.createIcons();
+}
+
+/* ============== EXPORT ============== */
+function exportCSV() {
+  if (!STATE.filtered.length) { showToast('Tidak ada data', 'Tidak ada data untuk diekspor', 'error'); return; }
+  const exportData = STATE.filtered.map(r => {
+    const cleanRow = {};
+    ALLOWED_FIELDS.forEach(f => cleanRow[f] = r[f] || '');
+    return cleanRow;
+  });
+  const csv = Papa.unparse(exportData);
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `pengiriman_ternak_${new Date().toISOString().slice(0,10)}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
+  showToast('Export berhasil', `${STATE.filtered.length} entri diunduh sebagai CSV`, 'success');
+}
+
+/* ============== INIT ============== */
+function updateDate() {
+  const d = new Date();
+  $('currentDate').textContent = d.toLocaleDateString('id-ID', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+initAuth();
+lucide.createIcons();
+setInterval(updateDate, 60000);
+</script>
+</body>
+</html>
