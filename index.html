@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SILIH-TERNAK — Dinas Peternakan Provinsi NTT</title>
+<!-- Backend Google Apps Script diatur melalui API_URL di script.js -->
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
+<script src="https://unpkg.com/lucide@latest" defer></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="overflow-x-hidden">
+<!-- GLOBAL LOADING OVERLAY -->
+<div id="globalLoader" class="global-loader hidden" aria-live="polite" aria-busy="true">
+  <div class="loader-card">
+    <div class="loader-orbit"><span></span><span></span><span></span></div>
+    <div class="loader-title" id="globalLoaderTitle">Memproses...</div>
+    <div class="loader-subtitle" id="globalLoaderSubtitle">Mohon tunggu sebentar</div>
+    <div class="loader-progress"><span></span></div>
+  </div>
+</div>
+
+
+<!-- ============== LOGIN OVERLAY ============== -->
+<div id="loginOverlay" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: linear-gradient(135deg, #fff7ed, #ffffff);">
+  <div class="absolute inset-0 overflow-hidden pointer-events-none">
+    <div class="absolute -top-20 -right-20 w-96 h-96 rounded-full" style="background: rgba(249,115,22,0.1); filter: blur(80px);"></div>
+    <div class="absolute -bottom-20 -left-20 w-96 h-96 rounded-full" style="background: rgba(14,165,233,0.1); filter: blur(80px);"></div>
+  </div>
+  
+  <div class="relative w-full max-w-md">
+    <div class="card p-8">
+      <div class="flex flex-col items-center text-center mb-6">
+        <div class="relative w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style="background: linear-gradient(135deg, var(--primary-2), var(--primary));">
+          <i data-lucide="ship" class="w-8 h-8" style="color: #ffffff;"></i>
+          <div class="absolute -top-1 -right-1 w-4 h-4 rounded-full" style="background: var(--accent); border: 2px solid #ffffff;"></div>
+        </div>
+        <h1 class="font-display text-2xl font-bold">SILIH-TERNAK</h1>
+        <p class="text-sm" style="color: var(--muted);">Sistem Informasi Lalu Lintas Ternak<br>Dinas Peternakan Provinsi NTT</p>
+      </div>
+
+      <div id="loginFormContainer">
+        <form id="loginForm" class="space-y-4">
+          <div>
+            <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Username</label>
+            <input id="loginUsername" type="text" required placeholder="Masukkan username" class="input-field w-full mt-1 px-4 py-2.5 rounded-lg text-sm">
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Password</label>
+            <input id="loginPassword" type="password" required placeholder="Masukkan password" class="input-field w-full mt-1 px-4 py-2.5 rounded-lg text-sm">
+          </div>
+          <div id="loginError" class="hidden text-xs font-semibold" style="color: var(--danger);"></div>
+          <button type="submit" class="btn-primary w-full py-2.5 rounded-lg text-sm flex items-center justify-center gap-2">
+            <i data-lucide="log-in" class="w-4 h-4"></i> Masuk ke Sistem
+          </button>
+          <p class="text-center text-xs" style="color: var(--muted);">
+            Belum punya akun? 
+            <button type="button" onclick="switchAuthView('register')" class="font-semibold" style="color: var(--primary);">Daftar sebagai Pelaku Usaha</button>
+          </p>
+        </form>
+      </div>
+
+      <div id="registerFormContainer" class="hidden">
+        <form id="registerForm" class="space-y-4">
+          <div>
+            <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Nama Lengkap</label>
+            <input id="regNama" type="text" required placeholder="Nama Anda" class="input-field w-full mt-1 px-4 py-2.5 rounded-lg text-sm">
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Nama Perusahaan</label>
+            <input id="regPerusahaan" type="text" required placeholder="PT/CV/UD..." class="input-field w-full mt-1 px-4 py-2.5 rounded-lg text-sm">
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Username</label>
+            <input id="regUsername" type="text" required placeholder="Buat username" class="input-field w-full mt-1 px-4 py-2.5 rounded-lg text-sm">
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Password</label>
+            <input id="regPassword" type="password" required placeholder="Buat password" class="input-field w-full mt-1 px-4 py-2.5 rounded-lg text-sm">
+          </div>
+          <div id="registerError" class="hidden text-xs font-semibold" style="color: var(--danger);"></div>
+          <button type="submit" class="btn-primary w-full py-2.5 rounded-lg text-sm flex items-center justify-center gap-2">
+            <i data-lucide="user-plus" class="w-4 h-4"></i> Daftar Sekarang
+          </button>
+          <p class="text-center text-xs" style="color: var(--muted);">
+            Sudah punya akun? 
+            <button type="button" onclick="switchAuthView('login')" class="font-semibold" style="color: var(--primary);">Kembali ke Login</button>
+          </p>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============== MAIN APP ============== -->
+<div id="mainApp" class="flex min-h-screen" style="display: none;">
+
+  <div class="sidebar-overlay fixed inset-0 bg-black/60 z-30 lg:hidden" onclick="toggleSidebar()"></div>
+
+  <aside class="sidebar fixed lg:sticky top-0 left-0 h-screen w-72 z-40 flex flex-col" style="background: #ffffff; border-right: 1px solid var(--border);">
+    <div class="px-6 py-6 border-b" style="border-color: var(--border);">
+      <div class="flex items-center gap-3">
+        <div class="relative w-11 h-11 rounded-xl flex items-center justify-center" style="background: linear-gradient(135deg, var(--primary-2), var(--primary));">
+          <i data-lucide="ship" class="w-6 h-6" style="color: #ffffff;"></i>
+          <div class="absolute -top-1 -right-1 w-3 h-3 rounded-full" style="background: var(--accent); border: 2px solid #ffffff;"></div>
+        </div>
+        <div>
+          <h1 class="font-display text-lg font-bold leading-tight">SILIH-TERNAK</h1>
+          <p class="text-[11px]" style="color: var(--muted);">Dinas Peternakan Provinsi NTT</p>
+        </div>
+      </div>
+    </div>
+
+    <nav class="flex-1 px-3 py-5 overflow-y-auto">
+      <p class="px-3 mb-2 text-[10px] font-semibold uppercase tracking-wider" style="color: var(--muted-2);">Menu Utama</p>
+      <a class="sidebar-link active flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium cursor-pointer" data-page="dashboard">
+        <i data-lucide="layout-dashboard" class="w-[18px] h-[18px]"></i> Dashboard
+      </a>
+      <a class="sidebar-link flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium cursor-pointer" data-page="data">
+        <i data-lucide="database" class="w-[18px] h-[18px]"></i> Data Pengiriman
+        <span class="ml-auto text-[10px] px-2 py-0.5 rounded-full" style="background: #ffedd5; color: var(--primary);" id="navDataCount">0</span>
+      </a>
+      <a class="sidebar-link flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium cursor-pointer" data-page="kapal">
+        <i data-lucide="ship" class="w-[18px] h-[18px]"></i> Informasi Armada
+      </a>
+      <a class="sidebar-link flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium cursor-pointer" data-page="diskusi">
+        <i data-lucide="messages-square" class="w-[18px] h-[18px]"></i> Panel Diskusi
+        <span class="ml-auto text-[10px] px-2 py-0.5 rounded-full" style="background: #fef9c3; color: var(--warning);" id="navDiskusiCount">0</span>
+      </a>
+      <a class="sidebar-link flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium cursor-pointer" data-page="statistik">
+        <i data-lucide="bar-chart-3" class="w-[18px] h-[18px]"></i> Statistik & Analitik
+      </a>
+
+      <p class="px-3 mt-6 mb-2 text-[10px] font-semibold uppercase tracking-wider" style="color: var(--muted-2);">Armada CN</p>
+      <div class="grid grid-cols-3 gap-2 px-3">
+        <button class="cn-quick p-2 rounded-lg text-[11px] font-semibold transition" data-ship="CN 1" style="background: var(--surface-2); border: 1px solid var(--border-soft);">CN 1</button>
+        <button class="cn-quick p-2 rounded-lg text-[11px] font-semibold transition" data-ship="CN 2" style="background: var(--surface-2); border: 1px solid var(--border-soft);">CN 2</button>
+        <button class="cn-quick p-2 rounded-lg text-[11px] font-semibold transition" data-ship="CN 3" style="background: var(--surface-2); border: 1px solid var(--border-soft);">CN 3</button>
+        <button class="cn-quick p-2 rounded-lg text-[11px] font-semibold transition" data-ship="CN 4" style="background: var(--surface-2); border: 1px solid var(--border-soft);">CN 4</button>
+        <button class="cn-quick p-2 rounded-lg text-[11px] font-semibold transition" data-ship="CN 5" style="background: var(--surface-2); border: 1px solid var(--border-soft);">CN 5</button>
+        <button class="cn-quick p-2 rounded-lg text-[11px] font-semibold transition" data-ship="CN 6" style="background: var(--surface-2); border: 1px solid var(--border-soft);">CN 6</button>
+      </div>
+
+
+      <div>
+        <a class="sidebar-link flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium cursor-pointer" data-page="profil">
+          <i data-lucide="user-round-pen" class="w-[18px] h-[18px]"></i> Profil Saya
+        </a>
+      </div>
+
+      <div id="navSistemContainer">
+        <p class="px-3 mt-6 mb-2 text-[10px] font-semibold uppercase tracking-wider" style="color: var(--muted-2);">Sistem</p>
+        <a class="sidebar-link flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium cursor-pointer" data-page="pengaturan">
+          <i data-lucide="settings" class="w-[18px] h-[18px]"></i> Pengaturan
+        </a>
+      </div>
+    </nav>
+
+    <div class="m-3 p-3 rounded-xl" style="background: var(--surface-2); border: 1px solid var(--border);">
+      <div class="flex items-center gap-2 mb-1.5">
+        <div class="pulse-dot"></div>
+        <span class="text-xs font-semibold">Tersinkron Otomatis</span>
+      </div>
+      <p class="text-[11px] mb-2" style="color: var(--muted);">Sumber: Google Spreadsheet Resmi</p>
+      <button onclick="loadCSV(true)" class="w-full text-[11px] py-1.5 rounded-md font-semibold flex items-center justify-center gap-1.5" style="background: #ffffff; border: 1px solid var(--border);">
+        <i data-lucide="refresh-cw" class="w-3 h-3"></i> Muat Ulang Data
+      </button>
+    </div>
+  </aside>
+
+  <main class="flex-1 min-w-0 lg:ml-0">
+    <header class="sticky top-0 z-20 backdrop-blur-xl border-b" style="background: rgba(255, 255, 255, 0.85); border-color: var(--border);">
+      <div class="flex items-center gap-4 px-4 lg:px-8 py-3.5">
+        <button class="lg:hidden p-2 rounded-lg" style="background: var(--surface-2);" onclick="toggleSidebar()">
+          <i data-lucide="menu" class="w-5 h-5"></i>
+        </button>
+        <div class="flex-1 max-w-md relative hidden md:block">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2" style="color: var(--muted-2);"></i>
+          <input id="globalSearch" type="text" placeholder="Cari perusahaan, surat, pelabuhan..." class="input-field w-full pl-9 pr-4 py-2 rounded-lg text-sm" oninput="handleGlobalSearch(this.value)">
+        </div>
+        <div class="flex items-center gap-3 ml-auto">
+          <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg" style="background: var(--surface-2); border: 1px solid var(--border);">
+            <i data-lucide="calendar" class="w-4 h-4" style="color: var(--muted);"></i>
+            <span class="text-xs font-medium" id="currentDate">—</span>
+          </div>
+          
+          <div class="flex items-center gap-2.5 pl-3" style="border-left: 1px solid var(--border);">
+            <div id="userAvatar" class="avatar" style="background: linear-gradient(135deg, var(--primary-2), var(--accent));">OP</div>
+            <div class="hidden sm:block">
+              <p class="text-xs font-semibold leading-tight" id="userName">Administrator</p>
+              <p class="text-[10px]" style="color: var(--muted);" id="userRole">Dinas Peternakan NTT</p>
+            </div>
+            <button onclick="logout()" class="p-2 rounded-lg" style="color: var(--danger);" title="Keluar">
+              <i data-lucide="log-out" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <section id="page-dashboard" class="page active px-4 lg:px-8 py-6">
+      <div class="wave-bg rounded-2xl p-6 lg:p-8 mb-6 relative overflow-hidden">
+        <div class="relative z-10 max-w-2xl">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="badge badge-primary"><i data-lucide="radio" class="w-3 h-3"></i> Live Monitoring</span>
+            <span class="badge badge-muted" id="lastUpdateBadge">Memuat...</span>
+          </div>
+          <h2 class="font-display text-3xl lg:text-4xl font-bold mb-2">Sistem Informasi Lalu Lintas Ternak</h2>
+          <p class="text-sm lg:text-base mb-5" style="color: var(--muted);">Pantau aktivitas pengiriman dan distribusi ternak di wilayah Provinsi NTT secara real-time, terhubung langsung dengan data Google Spreadsheet resmi.</p>
+          <div class="flex flex-wrap gap-2">
+            <button class="btn-primary px-4 py-2 rounded-lg text-sm flex items-center gap-2" onclick="navigate('data')">
+              <i data-lucide="table" class="w-4 h-4"></i> Lihat Data Pengiriman
+            </button>
+            <button class="btn-ghost px-4 py-2 rounded-lg text-sm flex items-center gap-2" onclick="navigate('kapal')">
+              <i data-lucide="ship" class="w-4 h-4"></i> Status Armada
+            </button>
+          </div>
+        </div>
+        <div class="absolute -right-10 -top-10 lg:right-10 lg:top-1/2 lg:-translate-y-1/2 opacity-30 lg:opacity-50 pointer-events-none">
+          <svg width="220" height="220" viewBox="0 0 220 220" class="floating-ship">
+            <g class="compass-ring">
+              <circle cx="110" cy="110" r="100" fill="none" stroke="#ea580c" stroke-width="1" stroke-dasharray="2 4" opacity="0.5"/>
+              <circle cx="110" cy="110" r="80" fill="none" stroke="#0284c7" stroke-width="1" stroke-dasharray="4 6" opacity="0.4"/>
+              <g stroke="#ea580c" stroke-width="1.5" opacity="0.7">
+                <line x1="110" y1="20" x2="110" y2="35"/>
+                <line x1="110" y1="185" x2="110" y2="200"/>
+                <line x1="20" y1="110" x2="35" y2="110"/>
+                <line x1="185" y1="110" x2="200" y2="110"/>
+              </g>
+              <text x="110" y="14" text-anchor="middle" fill="#ea580c" font-size="11" font-family="Space Grotesk" font-weight="600">N</text>
+              <text x="110" y="212" text-anchor="middle" fill="#78716c" font-size="11" font-family="Space Grotesk" font-weight="600">S</text>
+              <text x="10" y="114" text-anchor="middle" fill="#78716c" font-size="11" font-family="Space Grotesk" font-weight="600">W</text>
+              <text x="210" y="114" text-anchor="middle" fill="#78716c" font-size="11" font-family="Space Grotesk" font-weight="600">E</text>
+            </g>
+            <g transform="translate(110, 110)">
+              <polygon points="0,-40 8,0 0,8 -8,0" fill="#0284c7" opacity="0.9"/>
+              <polygon points="0,40 8,0 0,-8 -8,0" fill="#ea580c" opacity="0.7"/>
+              <circle r="6" fill="#ffffff" stroke="#ea580c" stroke-width="1.5"/>
+            </g>
+          </svg>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div class="stat-card p-5" style="--glow: rgba(249,115,22,0.15);">
+          <div class="flex items-start justify-between mb-3">
+            <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background: #ffedd5;">
+              <i data-lucide="package-check" class="w-5 h-5" style="color: var(--primary);"></i>
+            </div>
+            <span class="badge badge-success"><i data-lucide="trending-up" class="w-3 h-3"></i> Aktif</span>
+          </div>
+          <p class="text-xs mb-1" style="color: var(--muted);">Total Pengiriman</p>
+          <h3 class="font-display text-3xl font-bold counter" id="statTotal">—</h3>
+          <p class="text-[11px] mt-2" style="color: var(--muted-2);">Tercatat di sistem</p>
+        </div>
+        <div class="stat-card p-5" style="--glow: rgba(2,132,199,0.15);">
+          <div class="flex items-start justify-between mb-3">
+            <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background: #e0f2fe;">
+              <i data-lucide="ship" class="w-5 h-5" style="color: var(--accent);"></i>
+            </div>
+            <span class="badge badge-accent">6 Unit</span>
+          </div>
+          <p class="text-xs mb-1" style="color: var(--muted);">Armada Aktif</p>
+          <h3 class="font-display text-3xl font-bold counter">6</h3>
+          <p class="text-[11px] mt-2" style="color: var(--muted-2);">Kapal CN 1 s/d CN 6</p>
+        </div>
+        <div class="stat-card p-5" style="--glow: rgba(22,163,74,0.15);">
+          <div class="flex items-start justify-between mb-3">
+            <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background: #dcfce7;">
+              <i data-lucide="bug" class="w-5 h-5" style="color: var(--success);"></i>
+            </div>
+            <span class="badge badge-primary">Ternak</span>
+          </div>
+          <p class="text-xs mb-1" style="color: var(--muted);">Total Ternak Kirim</p>
+          <h3 class="font-display text-3xl font-bold counter" id="statTernak">—</h3>
+          <p class="text-[11px] mt-2" style="color: var(--muted-2);">Akumulasi seluruh pengiriman</p>
+        </div>
+        <div class="stat-card p-5" style="--glow: rgba(124,58,237,0.15);">
+          <div class="flex items-start justify-between mb-3">
+            <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background: #ede9fe;">
+              <i data-lucide="map-pin" class="w-5 h-5" style="color: var(--violet);"></i>
+            </div>
+            <span class="badge badge-violet">Rute</span>
+          </div>
+          <p class="text-xs mb-1" style="color: var(--muted);">Daerah Tujuan Unik</p>
+          <h3 class="font-display text-3xl font-bold counter" id="statDaerah">—</h3>
+          <p class="text-[11px] mt-2" style="color: var(--muted-2);">Sebaran wilayah</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 gap-5 mb-6">
+        <div class="card p-5">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="font-display text-lg font-bold">Pengiriman Terbaru</h3>
+              <p class="text-xs" style="color: var(--muted);">5 entri data terkini dari sistem</p>
+            </div>
+            <button class="text-xs font-semibold flex items-center gap-1.5" style="color: var(--primary);" onclick="navigate('data')">
+              Lihat Semua <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>Pengirim</th>
+                  <th>Tujuan</th>
+                  <th class="text-right">Ternak</th>
+                </tr>
+              </thead>
+              <tbody id="recentTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div class="card p-5">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="font-display text-lg font-bold">Tren Pengiriman</h3>
+              <p class="text-xs" style="color: var(--muted);">Berdasarkan timestamp</p>
+            </div>
+            <span class="badge badge-primary">7 Periode Terakhir</span>
+          </div>
+          <div class="chart-wrap"><canvas id="chartTrend"></canvas></div>
+        </div>
+        <div class="card p-5">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="font-display text-lg font-bold">Distribusi Daerah Tujuan</h3>
+              <p class="text-xs" style="color: var(--muted);">Top 6 daerah</p>
+            </div>
+            <i data-lucide="pie-chart" class="w-5 h-5" style="color: var(--muted);"></i>
+          </div>
+          <div class="chart-wrap"><canvas id="chartDaerah"></canvas></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="page-data" class="page px-4 lg:px-8 py-6">
+      <div class="flex flex-wrap items-end justify-between gap-4 mb-6">
+        <div>
+          <h2 class="font-display text-2xl lg:text-3xl font-bold mb-1">Data Pengiriman Ternak</h2>
+          <p class="text-sm" style="color: var(--muted);">Tersinkronisasi otomatis dari Google Spreadsheet.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button class="btn-ghost px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-2" onclick="exportCSV()">
+            <i data-lucide="download" class="w-4 h-4"></i> Export CSV
+          </button>
+          <button class="btn-primary px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-2" onclick="loadCSV(true)">
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i> Sinkronkan
+          </button>
+          <button id="btnAddData" class="btn-primary px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 hidden" onclick="openModal('add')">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i> Tambah Data Baru
+          </button>
+        </div>
+      </div>
+
+      <div class="card p-4 mb-5">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+          <div class="lg:col-span-2">
+            <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Pencarian</label>
+            <div class="relative mt-1">
+              <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2" style="color: var(--muted-2);"></i>
+              <input id="tableSearch" type="text" placeholder="Cari nama, surat, pelabuhan..." class="input-field w-full pl-9 pr-4 py-2 rounded-lg text-sm" oninput="renderTable()">
+            </div>
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Daerah Tujuan</label>
+            <select id="filterDaerah" class="input-field w-full mt-1 py-2 px-3 rounded-lg text-sm" onchange="renderTable()">
+              <option value="">Semua</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Pelabuhan Muat</label>
+            <select id="filterMuat" class="input-field w-full mt-1 py-2 px-3 rounded-lg text-sm" onchange="renderTable()">
+              <option value="">Semua</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Pelabuhan Tujuan</label>
+            <select id="filterTujuan" class="input-field w-full mt-1 py-2 px-3 rounded-lg text-sm" onchange="renderTable()">
+              <option value="">Semua</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="card overflow-hidden">
+        <div class="flex items-center justify-between p-4 border-b" style="border-color: var(--border);">
+          <div class="flex items-center gap-3">
+            <span class="text-sm font-semibold" id="tableInfo">0 entri</span>
+            <span class="badge badge-success"><i data-lucide="check-circle-2" class="w-3 h-3"></i> Live</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <select id="pageSize" class="input-field py-1.5 px-2 rounded-md text-xs" onchange="renderTable()">
+              <option value="10">10 / halaman</option>
+              <option value="25" selected>25 / halaman</option>
+              <option value="50">50 / halaman</option>
+              <option value="100">100 / halaman</option>
+            </select>
+          </div>
+        </div>
+        <div class="overflow-x-auto" style="max-height: 65vh;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>Daerah Tujuan</th>
+                <th>Jenis Permohonan</th>
+                <th>Surat Permohonan</th>
+                <th>Surat Izin</th>
+                <th>Sertifikat Kesehatan Hewan KH 11</th>
+                <th>Nama Perusahaan Pengirim</th>
+                <th>Nama Pengirim</th>
+                <th>Nama Perusahaan Penerima/Nama Penerima</th>
+                <th class="text-right">Jumlah ternak (ekor)</th>
+                <th>Pelabuhan Muat</th>
+                <th>Pelabuhan Tujuan</th>
+                <th>Status</th>
+                <th id="thAction" class="hidden">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="dataTableBody"></tbody>
+          </table>
+        </div>
+        <div class="flex items-center justify-between p-4 border-t" style="border-color: var(--border);">
+          <p class="text-xs" style="color: var(--muted);" id="paginationInfo">—</p>
+          <div class="flex items-center gap-1" id="paginationControls"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="page-kapal" class="page px-4 lg:px-8 py-6">
+      <div class="mb-6">
+        <h2 class="font-display text-2xl lg:text-3xl font-bold mb-1">Informasi Armada Kapal</h2>
+        <p class="text-sm" style="color: var(--muted);">Detail 6 unit kapal pengangkut ternak CN 1 sampai CN 6.</p>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5" id="shipCardsGrid"></div>
+    </section>
+
+    <section id="page-diskusi" class="page px-4 lg:px-8 py-6">
+      <div class="mb-6">
+        <h2 class="font-display text-2xl lg:text-3xl font-bold mb-1">Panel Diskusi Pelaku Usaha</h2>
+        <p class="text-sm" style="color: var(--muted);">Tempat pelaku usaha mengirimkan pertanyaan, berbagi informasi, dan berdiskusi terkait pengiriman ternak.</p>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div class="card p-5 lg:col-span-1 h-fit lg:sticky lg:top-24">
+          <div class="flex items-center gap-2 mb-4">
+            <div class="w-9 h-9 rounded-lg flex items-center justify-center" style="background: #ffedd5;">
+              <i data-lucide="message-circle-plus" class="w-5 h-5" style="color: var(--primary);"></i>
+            </div>
+            <div>
+              <h3 class="font-display text-base font-bold">Tulis Pertanyaan</h3>
+              <p class="text-[11px]" style="color: var(--muted);">Pertanyaan akan tampil di panel</p>
+            </div>
+          </div>
+          <form id="diskusiForm" class="space-y-3">
+            <div>
+              <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Nama Lengkap</label>
+              <input id="formNama" required type="text" placeholder="Contoh: Budi Santoso" class="input-field w-full mt-1 px-3 py-2 rounded-lg text-sm">
+            </div>
+            <div>
+              <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Nama Perusahaan</label>
+              <input id="formPerusahaan" type="text" placeholder="PT / CV / UD" class="input-field w-full mt-1 px-3 py-2 rounded-lg text-sm">
+            </div>
+            <div>
+              <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Kategori</label>
+              <select id="formKategori" class="input-field w-full mt-1 px-3 py-2 rounded-lg text-sm">
+                <option value="Umum">Pertanyaan Umum</option>
+                <option value="Perizinan">Perizinan & Dokumen</option>
+                <option value="Teknis">Teknis Kapal & Muatan</option>
+                <option value="Pelabuhan">Pelabuhan & Logistik</option>
+                <option value="Ternak">Perawatan Ternak</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Pertanyaan</label>
+              <textarea id="formPesan" required rows="4" placeholder="Tuliskan pertanyaan atau diskusi Anda..." class="input-field w-full mt-1 px-3 py-2 rounded-lg text-sm resize-none"></textarea>
+            </div>
+            <button type="submit" class="btn-primary w-full py-2.5 rounded-lg text-sm flex items-center justify-center gap-2">
+              <i data-lucide="send" class="w-4 h-4"></i> Kirim Pertanyaan
+            </button>
+          </form>
+        </div>
+        <div class="lg:col-span-2 space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex gap-1 p-1 rounded-xl" style="background: var(--surface-2); border: 1px solid var(--border);">
+              <button class="tab-pill active" data-filter="all" onclick="filterThread('all', this)">Semua</button>
+              <button class="tab-pill" data-filter="Umum" onclick="filterThread('Umum', this)">Umum</button>
+              <button class="tab-pill" data-filter="Perizinan" onclick="filterThread('Perizinan', this)">Perizinan</button>
+              <button class="tab-pill" data-filter="Teknis" onclick="filterThread('Teknis', this)">Teknis</button>
+              <button class="tab-pill" data-filter="Pelabuhan" onclick="filterThread('Pelabuhan', this)">Pelabuhan</button>
+            </div>
+            <span class="text-xs" style="color: var(--muted);"><span id="threadCount">0</span> diskusi aktif</span>
+          </div>
+          <div id="threadList" class="space-y-3"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="page-statistik" class="page px-4 lg:px-8 py-6">
+      <div class="mb-6">
+        <h2 class="font-display text-2xl lg:text-3xl font-bold mb-1">Statistik & Analitik</h2>
+        <p class="text-sm" style="color: var(--muted);">Visualisasi data pengiriman ternak berdasarkan berbagai dimensi.</p>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
+        <div class="card p-5">
+          <h3 class="font-display text-lg font-bold mb-1">Top Perusahaan Pengirim</h3>
+          <p class="text-xs mb-4" style="color: var(--muted);">Berdasarkan volume pengiriman</p>
+          <div class="chart-wrap"><canvas id="chartPengirim"></canvas></div>
+        </div>
+        <div class="card p-5">
+          <h3 class="font-display text-lg font-bold mb-1">Aktivitas Pelabuhan</h3>
+          <p class="text-xs mb-4" style="color: var(--muted);">Pelabuhan muat vs tujuan</p>
+          <div class="chart-wrap"><canvas id="chartPelabuhan"></canvas></div>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div class="card p-5 lg:col-span-2">
+          <h3 class="font-display text-lg font-bold mb-1">Volume Ternak per Daerah Tujuan</h3>
+          <p class="text-xs mb-4" style="color: var(--muted);">Total jumlah ternak dikirim per daerah</p>
+          <div class="chart-wrap" style="height: 320px;"><canvas id="chartVolumeDaerah"></canvas></div>
+        </div>
+        <div class="card p-5">
+          <h3 class="font-display text-lg font-bold mb-1">Ringkasan</h3>
+          <p class="text-xs mb-4" style="color: var(--muted);">Metrik kunci</p>
+          <div class="space-y-3" id="statsSummary"></div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- PROFIL USER -->
+    <section id="page-profil" class="page px-4 lg:px-8 py-6">
+      <div class="mb-6">
+        <h2 class="font-display text-2xl lg:text-3xl font-bold mb-1">Profil Saya</h2>
+        <p class="text-sm" style="color: var(--muted);">Kelola data diri dan informasi akun yang digunakan di SILIH-TERNAK.</p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div class="card p-6 lg:col-span-2">
+          <div class="flex items-center gap-4 mb-6">
+            <div id="profileAvatarLarge" class="avatar" style="width:64px;height:64px;font-size:20px;background:linear-gradient(135deg,var(--primary-2),var(--accent));">U</div>
+            <div>
+              <h3 class="font-display text-lg font-bold" id="profileHeadingName">Profil Pengguna</h3>
+              <p class="text-xs" style="color:var(--muted);" id="profileHeadingRole">Pelaku Usaha</p>
+            </div>
+          </div>
+
+          <form id="profileForm" class="space-y-4">
+            <div>
+              <label class="text-[11px] font-semibold uppercase tracking-wider" style="color:var(--muted);">Username</label>
+              <input id="profileUsername" type="text" readonly class="input-field w-full mt-1 px-3 py-2.5 rounded-lg text-sm" style="background:#f5f5f4;cursor:not-allowed;">
+              <p class="text-[10px] mt-1" style="color:var(--muted);">Username tidak dapat diubah karena digunakan sebagai identitas login.</p>
+            </div>
+            <div>
+              <label class="text-[11px] font-semibold uppercase tracking-wider" style="color:var(--muted);">Nama Lengkap</label>
+              <input id="profileNama" type="text" minlength="2" maxlength="100" required class="input-field w-full mt-1 px-3 py-2.5 rounded-lg text-sm" placeholder="Nama lengkap">
+            </div>
+            <div>
+              <label class="text-[11px] font-semibold uppercase tracking-wider" style="color:var(--muted);">Nama Perusahaan / Instansi</label>
+              <input id="profilePerusahaan" type="text" maxlength="150" class="input-field w-full mt-1 px-3 py-2.5 rounded-lg text-sm" placeholder="Nama perusahaan atau instansi">
+            </div>
+            <button type="submit" class="btn-primary px-5 py-2.5 rounded-lg text-sm font-semibold flex items-center justify-center gap-2">
+              <i data-lucide="save" class="w-4 h-4"></i> Simpan Data Diri
+            </button>
+          </form>
+        </div>
+
+        <div class="card p-6">
+          <div class="w-11 h-11 rounded-xl flex items-center justify-center mb-4" style="background:#e0f2fe;">
+            <i data-lucide="shield-check" class="w-5 h-5" style="color:var(--accent);"></i>
+          </div>
+          <h3 class="font-display text-base font-bold mb-1">Keamanan Akun</h3>
+          <p class="text-xs mb-5" style="color:var(--muted);">Ganti password akun secara berkala.</p>
+          <button type="button" onclick="navigate('pengaturan')" class="btn-ghost w-full py-2.5 rounded-lg text-sm font-semibold">Buka Pengaturan Keamanan</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="page-pengaturan" class="page px-4 lg:px-8 py-6">
+      <div class="mb-6">
+        <h2 class="font-display text-2xl lg:text-3xl font-bold mb-1">Pengaturan Sistem</h2>
+        <p class="text-sm" style="color: var(--muted);">Konfigurasi sumber data dan preferensi tampilan.</p>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div class="card p-5">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background: #ffedd5;">
+              <i data-lucide="database" class="w-5 h-5" style="color: var(--primary);"></i>
+            </div>
+            <div>
+              <h3 class="font-display text-base font-bold">Sumber Data</h3>
+              <p class="text-[11px]" style="color: var(--muted);">Google Spreadsheet (CSV Publik)</p>
+            </div>
+          </div>
+          <div class="space-y-3">
+            <div>
+              <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">URL CSV</label>
+              <input id="csvUrlInput" type="text" class="input-field w-full mt-1 px-3 py-2 rounded-lg text-xs font-mono" value="https://docs.google.com/spreadsheets/d/e/2PACX-1vTj9fD4wEmclrF78Y0H9fCeTXt10LQoiUByfukD-zdit4gyKgfmNwt6ccLiSNo1aA/pub?output=csv">
+            </div>
+            <div class="flex items-center justify-between p-3 rounded-lg" style="background: var(--surface-2); border: 1px solid var(--border);">
+              <div>
+                <p class="text-xs font-semibold">Sinkronisasi Otomatis</p>
+                <p class="text-[10px]" style="color: var(--muted);">Muat ulang setiap 5 menit</p>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" class="sr-only peer" checked>
+                <div class="w-10 h-5 rounded-full peer-checked:bg-orange-500/40 transition" style="background: var(--border);"></div>
+                <div class="absolute left-0.5 top-0.5 w-4 h-4 rounded-full transition peer-checked:translate-x-5" style="background: var(--primary);"></div>
+              </label>
+            </div>
+            <button class="btn-primary w-full py-2 rounded-lg text-sm flex items-center justify-center gap-2" onclick="loadCSV(true)">
+              <i data-lucide="refresh-cw" class="w-4 h-4"></i> Muat Ulang Sekarang
+            </button>
+          </div>
+        </div>
+        <div class="card p-5">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background: #e0f2fe;">
+              <i data-lucide="info" class="w-5 h-5" style="color: var(--accent);"></i>
+            </div>
+            <div>
+              <h3 class="font-display text-base font-bold">Informasi Aplikasi</h3>
+              <p class="text-[11px]" style="color: var(--muted);">SILIH-TERNAK NTT</p>
+            </div>
+          </div>
+          <div class="space-y-2.5 text-sm">
+            <div class="flex justify-between py-2 border-b" style="border-color: var(--border-soft);">
+              <span style="color: var(--muted);">Versi</span>
+              <span class="font-mono">v3.1.0</span>
+            </div>
+            <div class="flex justify-between py-2 border-b" style="border-color: var(--border-soft);">
+              <span style="color: var(--muted);">Total Armada</span>
+              <span class="font-semibold">6 Kapal (CN 1–6)</span>
+            </div>
+            <div class="flex justify-between py-2 border-b" style="border-color: var(--border-soft);">
+              <span style="color: var(--muted);">Instansi</span>
+              <span class="font-semibold">Dinas Peternakan NTT</span>
+            </div>
+            <div class="flex justify-between py-2 border-b" style="border-color: var(--border-soft);">
+              <span style="color: var(--muted);">Penyimpanan Diskusi</span>
+              <span class="font-semibold">Local Browser</span>
+            </div>
+            <div class="flex justify-between py-2">
+              <span style="color: var(--muted);">Status</span>
+              <span class="badge badge-success"><span class="pulse-dot" style="width:6px;height:6px;"></span> Online</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="card p-5">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background: #dcfce7;">
+              <i data-lucide="user-plus" class="w-5 h-5" style="color: var(--success);"></i>
+            </div>
+            <div>
+              <h3 class="font-display text-base font-bold">Buat Akun Admin</h3>
+              <p class="text-[11px]" style="color: var(--muted);">Tambah akun administrator baru</p>
+            </div>
+          </div>
+          <form id="createAdminForm" class="space-y-3">
+            <div>
+              <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Nama Lengkap</label>
+              <input id="adminNama" type="text" required placeholder="Nama admin" class="input-field w-full mt-1 px-3 py-2 rounded-lg text-sm">
+            </div>
+            <div>
+              <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Username</label>
+              <input id="adminUsername" type="text" required placeholder="Username" class="input-field w-full mt-1 px-3 py-2 rounded-lg text-sm">
+            </div>
+            <div>
+              <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Password</label>
+              <input id="adminPassword" type="password" required placeholder="Password" class="input-field w-full mt-1 px-3 py-2 rounded-lg text-sm">
+            </div>
+            <button type="submit" class="btn-primary w-full py-2 rounded-lg text-sm flex items-center justify-center gap-2">
+              <i data-lucide="save" class="w-4 h-4"></i> Daftarkan Admin
+            </button>
+          </form>
+        </div>
+
+        <div class="card p-5">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background:#e0f2fe;">
+              <i data-lucide="key-round" class="w-5 h-5" style="color:var(--accent);"></i>
+            </div>
+            <div>
+              <h3 class="font-display text-base font-bold">Keamanan Akun</h3>
+              <p class="text-[11px]" style="color:var(--muted);">Ganti password akun yang sedang login</p>
+            </div>
+          </div>
+          <form id="changePasswordForm" class="space-y-3">
+            <input id="oldPassword" type="password" required placeholder="Password lama" class="input-field w-full px-3 py-2 rounded-lg text-sm">
+            <input id="newPassword" type="password" minlength="8" required placeholder="Password baru (minimal 8 karakter)" class="input-field w-full px-3 py-2 rounded-lg text-sm">
+            <input id="newPassword2" type="password" minlength="8" required placeholder="Ulangi password baru" class="input-field w-full px-3 py-2 rounded-lg text-sm">
+            <button type="submit" class="btn-ghost w-full py-2 rounded-lg text-sm font-semibold flex items-center justify-center gap-2">
+              <i data-lucide="shield-check" class="w-4 h-4"></i> Simpan Password
+            </button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- MODAL: Add/Edit Data (Admin Only) -->
+<div id="dataModal" class="modal-overlay hidden">
+  <div class="card w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between p-5 border-b" style="border-color: var(--border);">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg flex items-center justify-center" style="background: #ffedd5;">
+          <i data-lucide="plus-circle" class="w-5 h-5" style="color: var(--primary);" id="modalIcon"></i>
+        </div>
+        <h3 class="font-display text-lg font-bold" id="modalTitle">Tambah Data Pengiriman Baru</h3>
+      </div>
+      <button onclick="closeModal()" class="p-2 rounded-lg hover:bg-gray-100">
+        <i data-lucide="x" class="w-5 h-5" style="color: var(--muted);"></i>
+      </button>
+    </div>
+    <form id="dataForm" class="p-5 space-y-4">
+      <input type="hidden" id="editId">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Timestamp</label>
+          <input required type="datetime-local" id="fTimestamp" class="input-field w-full mt-1 px-3 py-2 rounded-lg text-sm">
+        </div>
+        <div>
+          <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Daerah Tujuan</label>
+          <input required type="text" id="fDaerah" class="input-field w-full mt-1 px-3 py-2 rounded-lg text-sm">
+        </div>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Jenis Permohonan</label>
+          <input required type="text" id="fJenis" class="input-field w-full mt-1 px-3 py-2 rounded-lg text-sm">
+        </div>
+        <div>
+          <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Surat Permohonan</label>
+          <input required type="text" id="fSuratPermohonan" class="input-field w-full mt-1 px-3 py-2 rounded-lg text-sm">
+        </div>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Surat Izin</label>
+          <input required type="text" id="fSuratIzin" class="input-field w-full mt-1 px-3 py-2 rounded-lg text-sm">
+        </div>
+        <div>
+          <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Sertifikat KH 11</label>
+          <input required type="text" id="fKH11" class="input-field w-full mt-1 px-3 py-2 rounded-lg text-sm">
+        </div>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Perusahaan Pengirim</label>
+          <input required type="text" id="fPengirim" class="input-field w-full mt-1 px-3 py-2 rounded-lg text-sm">
+        </div>
+        <div>
+          <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Nama Pengirim</label>
+          <input required type="text" id="fNamaPengirim" class="input-field w-full mt-1 px-3 py-2 rounded-lg text-sm">
+        </div>
+      </div>
+      <div>
+        <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Nama Perusahaan Penerima/Nama Penerima</label>
+        <input required type="text" id="fPenerima" class="input-field w-full mt-1 px-3 py-2 rounded-lg text-sm">
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Jumlah ternak (ekor)</label>
+          <input required type="number" min="1" id="fJumlah" class="input-field w-full mt-1 px-3 py-2 rounded-lg text-sm">
+        </div>
+        <div>
+          <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Pelabuhan Muat</label>
+          <input required type="text" id="fMuat" class="input-field w-full mt-1 px-3 py-2 rounded-lg text-sm">
+        </div>
+        <div>
+          <label class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--muted);">Pelabuhan Tujuan</label>
+          <input required type="text" id="fTujuan" class="input-field w-full mt-1 px-3 py-2 rounded-lg text-sm">
+        </div>
+      </div>
+      <div class="pt-3 flex justify-end gap-2 border-t" style="border-color: var(--border-soft);">
+        <button type="button" onclick="closeModal()" class="btn-ghost px-4 py-2 rounded-lg text-sm">Batal</button>
+        <button type="submit" class="btn-primary px-4 py-2 rounded-lg text-sm flex items-center gap-2" id="modalSubmitBtn">
+          <i data-lucide="save" class="w-4 h-4"></i> Simpan Data
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL: Edit Jadwal Kapal (Admin Only) -->
+<div id="jadwalModal" class="modal-overlay hidden">
+  <div class="card w-full max-w-md">
+    <div class="flex items-center justify-between p-5 border-b" style="border-color: var(--border);">
+      <h3 class="font-display text-lg font-bold">Edit Jadwal Keberangkatan</h3>
+      <button onclick="closeJadwalModal()" class="p-2 rounded-lg hover:bg-gray-100">
+        <i data-lucide="x" class="w-5 h-5" style="color: var(--muted);"></i>
+      </button>
+    </div>
+    <div class="p-5">
+      <p class="text-xs mb-2" style="color: var(--muted);" id="jadwalShipName">Kapal: -</p>
+      <textarea id="jadwalInput" rows="4" class="input-field w-full px-3 py-2 rounded-lg text-sm" placeholder="Contoh: 5, 15, 25 setiap bulan"></textarea>
+      <div class="pt-4 flex justify-end gap-2">
+        <button onclick="closeJadwalModal()" class="btn-ghost px-4 py-2 rounded-lg text-sm">Batal</button>
+        <button onclick="saveJadwal()" class="btn-primary px-4 py-2 rounded-lg text-sm flex items-center gap-2">
+          <i data-lucide="save" class="w-4 h-4"></i> Simpan
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast">
+  <div class="flex items-start gap-3">
+    <i data-lucide="info" class="w-5 h-5 mt-0.5" style="color: var(--primary);" id="toastIcon"></i>
+    <div>
+      <p class="font-semibold text-sm" id="toastTitle">Informasi</p>
+      <p class="text-xs mt-0.5" style="color: var(--muted);" id="toastMsg">Pesan toast</p>
+    </div>
+  </div>
+</div>
+
+<script src="script.js" defer></script>
+</body>
+</html>
